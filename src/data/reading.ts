@@ -1,4 +1,6 @@
-// EXPORTS: IReadingItem, READING_ITEMS, READING_LEVELS
+// EXPORTS: IReadingItem, ReadingKind, READING_ITEMS, READING_LEVELS
+
+import { READING_EXTRA } from './reading-extra';
 
 
 /**
@@ -6,6 +8,8 @@
  * 这是 GESP / CSP 选择题里占比最高的一类，考的是「跟着程序走一遍」的能力，
  * 而不是背语法。所以每题的 explanation 必须写清逐行推演过程。
  */
+export type ReadingKind = 'output' | 'blank';
+
 export interface IReadingItem {
   id: string;
   /** 对应 GESP 级别 1–8 */
@@ -13,22 +17,32 @@ export interface IReadingItem {
   title: string;
   /** 一句话考点，做题前不显示，判题后才揭示 */
   point: string;
+  /** output = 猜输出（选择题）；blank = 程序填空（输入答案） */
+  kind: ReadingKind;
+  /** output 题是完整程序；blank 题含一个 ___ 占位 */
   code: string;
-  options: string[];
-  answerIndex: number;
+  /** output 题的四个选项 */
+  options?: string[];
+  /** output 题的正确选项下标 */
+  answerIndex?: number;
+  /** blank 题的可接受写法，第一个用于编译自检 */
+  answers?: string[];
+  /** blank 题填对之后程序应输出的内容，用于自检 */
+  expected?: string;
   /** 逐行推演：为什么是这个答案，其他选项错在哪 */
   explanation: string;
 }
 
 export const READING_LEVELS = [1, 2, 3, 4, 5, 6, 7, 8];
 
-export const READING_ITEMS: IReadingItem[] = [
+const BASE_ITEMS: IReadingItem[] = [
   // ── 1 级：整数运算与输出 ──────────────────────────────────────────
   {
     id: 'rd-l1-div',
     level: 1,
     title: '整除、取余与乘法',
     point: '整数除法向下取整、% 取余、以及输出顺序',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -47,6 +61,7 @@ int main() {
     level: 1,
     title: '自增与赋值顺序',
     point: 'x++ 先用后加；赋值表达式从右往左算',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -69,6 +84,7 @@ int main() {
     level: 2,
     title: '多分支只走一条',
     point: 'if / else if 从上往下匹配，命中后整条链结束',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -90,6 +106,7 @@ int main() {
     level: 2,
     title: '循环里的平方累加',
     point: 'for 的循环次数与累加变量初值',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -113,6 +130,7 @@ int main() {
     level: 3,
     title: '隔一个取一个',
     point: '数组下标从 0 开始、循环步长为 -2',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -133,6 +151,7 @@ int main() {
     level: 3,
     title: 'char 与 ASCII 值',
     point: '字符加整数自动转成 int，强转回 char 才是字母',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -153,6 +172,7 @@ int main() {
     level: 4,
     title: '两次调用阶乘函数',
     point: '递归的基准条件与返回值叠加',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -175,6 +195,7 @@ int main() {
     level: 4,
     title: '下三角元素求和',
     point: '双重循环里内层上界跟着外层走',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -201,6 +222,7 @@ int main() {
     level: 5,
     title: '递推数列第 7 项',
     point: '数组递推的初值下标与循环终点',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -222,6 +244,7 @@ int main() {
     level: 5,
     title: '冒泡排序后的中间元素',
     point: '相邻交换把大数推到末尾，循环边界 4 - i',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -245,6 +268,7 @@ int main() {
     level: 5,
     title: '二分找 7 需要几次',
     point: 'mid 取整方向决定下一次区间',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -273,6 +297,7 @@ int main() {
     level: 6,
     title: '前缀和求区间和',
     point: 'pre[i] 表示前 i 个元素之和，区间用 pre[r] - pre[l-1]',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -295,6 +320,7 @@ int main() {
     level: 6,
     title: '结构体数组里找最高分',
     point: '整条记录赋值，同分不替换（严格大于）',
+    kind: 'output',
     code: `#include <iostream>
 #include <string>
 using namespace std;
@@ -323,6 +349,7 @@ int main() {
     level: 6,
     title: '汉诺塔步数递归',
     point: 'h(n) = 2 * h(n-1) + 1 的展开',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -347,6 +374,7 @@ int main() {
     level: 7,
     title: '最长上升子序列长度',
     point: 'f[i] 以 i 结尾的最长上升子序列；内层只往前看',
+    kind: 'output',
     code: `#include <iostream>
 #include <algorithm>
 using namespace std;
@@ -372,6 +400,7 @@ int main() {
     level: 7,
     title: '0/1 背包结果',
     point: '一维背包必须倒序枚举容量',
+    kind: 'output',
     code: `#include <iostream>
 #include <algorithm>
 using namespace std;
@@ -400,6 +429,7 @@ int main() {
     level: 8,
     title: 'Floyd 求 0 到 4 最短路',
     point: '三重循环 k 在最外层；INF 相加不能溢出',
+    kind: 'output',
     code: `#include <iostream>
 #include <algorithm>
 using namespace std;
@@ -430,6 +460,7 @@ int main() {
     level: 8,
     title: 'BFS 求无权图最短步数',
     point: 'BFS 按层扩展，第一次到达即最短',
+    kind: 'output',
     code: `#include <iostream>
 #include <queue>
 #include <vector>
@@ -465,6 +496,7 @@ int main() {
     level: 8,
     title: '位运算枚举子集',
     point: 'n 个元素的子集共 2^n 个；(mask >> i) & 1 判位',
+    kind: 'output',
     code: `#include <iostream>
 using namespace std;
 
@@ -487,3 +519,6 @@ int main() {
       'a = {1, 2, 4}，mask 从 000 枚举到 111 共 8 个子集。逐个算和：000 → 0；001 → 1；010 → 2；011 → 3；100 → 4；101 → 5；110 → 6（{2, 4}）；111 → 7（{1, 2, 4}）。等于 6 的只有 110 一个，所以 cnt = 1。注意 (mask >> i) & 1 读的是第 i 位，对应 a[i]；若把判定改成 sum >= 6，答案会变成 2（110 与 111 都满足）。',
   },
 ];
+
+// 扩展题库单独存放，避免单文件过长
+export const READING_ITEMS: IReadingItem[] = [...BASE_ITEMS, ...READING_EXTRA];

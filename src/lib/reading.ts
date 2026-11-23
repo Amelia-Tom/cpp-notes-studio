@@ -11,6 +11,8 @@ export interface ReadingRecord {
   choice: number;
   /** 最近一次是否答对 */
   correct: boolean;
+  /** 填空题最近一次提交的原文（选择题不记录） */
+  text?: string;
   /** 累计作答次数 */
   attempts: number;
   /** 累计答对次数 */
@@ -45,7 +47,7 @@ function subscribe(fn: () => void): () => void {
   return () => listeners.delete(fn);
 }
 
-export function saveReadingAnswer(itemId: string, choice: number, correct: boolean): void {
+export function saveReadingAnswer(itemId: string, choice: number, correct: boolean, text?: string): void {
   const prev = records[itemId];
   records = {
     ...records,
@@ -53,6 +55,7 @@ export function saveReadingAnswer(itemId: string, choice: number, correct: boole
       itemId,
       choice,
       correct,
+      text,
       attempts: (prev?.attempts ?? 0) + 1,
       correctCount: (prev?.correctCount ?? 0) + (correct ? 1 : 0),
       lastAt: new Date().toISOString(),

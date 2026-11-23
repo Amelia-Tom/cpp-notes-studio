@@ -1,4 +1,4 @@
-// EXPORTS: 默认导出 ReadingPage 页面（程序阅读 · 猜输出训练）
+// EXPORTS: 默认导出 ReadingPage 页面（程序阅读训练：猜输出 + 程序填空）
 
 import { useMemo, useState } from 'react';
 import { ArrowRight, Check, Lightbulb, RotateCcw, Target, X } from 'lucide-react';
@@ -9,8 +9,16 @@ import { saveReadingAnswer, useReadingRecords } from '@/lib/reading';
 
 interface Answer {
   itemId: string;
+  /** output 题是选项下标，blank 题为 -1 */
   choice: number;
   correct: boolean;
+  /** blank 题提交的原文 */
+  text?: string;
+}
+
+/** 填空判定：去掉空白、末尾分号，忽略大小写 */
+function normalizeBlank(value: string): string {
+  return value.replace(/；/g, ';').replace(/;/g, '').replace(/\s+/g, '').toLowerCase();
 }
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D'];
@@ -52,8 +60,11 @@ function LevelChips({
 
 export default function ReadingPage() {
   const [level, setLevel] = useState<number | 'all'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'output' | 'blank'>('all');
   const [index, setIndex] = useState(0);
   const [choice, setChoice] = useState<number | null>(null);
+  const [fill, setFill] = useState('');
+  const [fillText, setFillText] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [finished, setFinished] = useState(false);
   const [wrongOnly, setWrongOnly] = useState<string[] | null>(null);
@@ -67,9 +78,18 @@ export default function ReadingPage() {
     return map;
   }, []);
 
-  const queue = useMemo<IReadingItem[]>(
-    () => (level === 'all' ? READING_ITEMS : READING_ITEMS.filter((item) => item.level === level)),
-    [level],
+  const queue = useMemo<IReadingItem[]>(() => {
+    const byLevel = level === 'all' ? READING_ITEMS : READING_ITEMS.filter((item) => item.level === level);
+    return typeFilter === 'all' ? byLevel : byLevel.filter((item) => item.kind === typeFilter);
+  }, [level, typeFilter]);
+
+  const typeCounts = useMemo(
+    () => ({
+      all: READING_ITEMS.length,
+      output: READING_ITEMS.filter((item) => item.kind === 'output').length,
+      blank: READING_ITEMS.filter((item) => item.kind === 'blank').length,
+    }),
+    [],
   );
 
   const answeredCount = answers.filter((answer) => queue.some((item) => item.id === answer.itemId)).length;
@@ -89,6 +109,8 @@ export default function ReadingPage() {
       setWrongOnly(wrong);
       setAnswers([]);
       setChoice(null);
+      setFill('');
+      setFillText(null);
       setIndex(0);
       setFinished(false);
       return;
@@ -97,6 +119,8 @@ export default function ReadingPage() {
     setWrongOnly(null);
     setAnswers([]);
     setChoice(null);
+    setFill('');
+    setFillText(null);
     setIndex(0);
     setFinished(false);
   };
@@ -115,6 +139,18 @@ export default function ReadingPage() {
     saveReadingAnswer(display.id, optionIndex, isRight);
   };
 
+  const submitFill = () => {
+    if (choice !== null || !display || display.kind !== 'blank') return;
+    const raw = fill.trim();
+    if (raw.length === 0) return;
+    const accepted = (display.answers ?? []).map(normalizeBlank);
+    const isRight = accepted.includes(normalizeBlank(raw));
+    setChoice(-1);
+    setFillText(raw);
+    setAnswers((prev) => [...prev, { itemId: display.id, choice: -1, correct: isRight, text: raw }]);
+    saveReadingAnswer(display.id, -1, isRight, raw);
+  };
+
   const next = () => {
     if (index + 1 >= finalQueue.length) {
       setFinished(true);
@@ -122,6 +158,8 @@ export default function ReadingPage() {
     }
     setIndex(index + 1);
     setChoice(null);
+    setFill('');
+    setFillText(null);
   };
 
   const wrongAnswers = answers.filter((answer) => !answer.correct);
@@ -131,10 +169,10 @@ export default function ReadingPage() {
     <div className="mx-auto max-w-4xl px-5 py-10 md:px-10 md:py-14">
       <header className="border-b border-border pb-6">
         <span className="mono-label">reading · guess the output</span>
-        <h1 className="heading-tight mt-2 text-3xl font-semibold">程序阅读 · 猜输出</h1>
+        <h1 className="heading-tight mt-2 text-3xl font-semibold">程序阅读训练</h1>
         <p className="mt-3 max-w-2xl text-[15.5px] leading-[1.8] text-muted-foreground">
-          GESP 与 CSP 的选择题里，一大半是「给一段程序，问输出什么」。这类题不考记忆，考的是能不能跟着程序一步步走。
-          下面每题都按 GESP 级别标注，选完立刻给逐行推演——错了不要紧，重点是把推演过程看一遍再走。
+          GESP 与 CSP 的选择题里，一大半是「给一段程序，问输出什么」；另有大量程序填空题，考「哪一行/哪个表达式才能让程序得到正确结果」。
+          两种题都不靠背，靠能不能跟着程序走一遍。每题按 GESP 级别标注，答完立刻给逐行推演。
         </p>
         <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3 border-t border-border pt-4">
           {[
@@ -162,6 +200,40 @@ export default function ReadingPage() {
               restart(nextLevel);
             }}
           />
+          <div className="flex flex-wrap items-center gap-2">
+            {(
+              [
+                { key: 'all', label: '全部题型' },
+                { key: 'output', label: '猜输出' },
+                { key: 'blank', label: '程序填空' },
+              ] as const
+            ).map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => {
+                  if (option.key === typeFilter) return;
+                  setTypeFilter(option.key);
+                  setWrongOnly(null);
+                  setAnswers([]);
+                  setChoice(null);
+                  setFill('');
+                  setFillText(null);
+                  setIndex(0);
+                  setFinished(false);
+                }}
+                className={cn(
+                  'rounded-lg border px-3 py-1.5 text-[13px] transition-colors',
+                  typeFilter === option.key
+                    ? 'border-primary/30 bg-primary/10 font-medium text-primary'
+                    : 'border-border text-muted-foreground hover:bg-foreground/[0.04] hover:text-foreground',
+                )}
+              >
+                {option.label}
+                <span className="ml-1.5 tabular-nums opacity-70">{typeCounts[option.key]}</span>
+              </button>
+            ))}
+          </div>
           {wrongOnly && (
             <p className="text-[13.5px] text-muted-foreground">
               正在重做上一轮的 {finalQueue.length} 道错题。
@@ -201,15 +273,51 @@ export default function ReadingPage() {
           </div>
 
           <p className="mt-5 text-[14.5px] leading-[1.75] text-muted-foreground">
-            阅读下面的程序（可以直接按行号跟着走），选出它的输出：
+            {display.kind === 'blank'
+              ? `把程序里的 ___ 补全，让程序输出 ${display.expected ?? ''}：`
+              : '阅读下面的程序（可以直接按行号跟着走），选出它的输出：'}
           </p>
 
           <div className="mt-3">
             <CodeCard code={display.code} title="main.cpp" />
           </div>
 
+          {display.kind === 'blank' ? (
+            <div className="mt-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  value={fill}
+                  onChange={(event) => setFill(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') submitFill();
+                  }}
+                  disabled={choice !== null}
+                  placeholder="填写 ___ 处的内容，例如 i <= n"
+                  className="min-w-[240px] flex-1 rounded-lg border border-border bg-card px-3 py-2.5 text-[14.5px] outline-none transition-colors focus:border-primary/40 disabled:opacity-60"
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                />
+                <button
+                  type="button"
+                  onClick={submitFill}
+                  disabled={choice !== null || fill.trim().length === 0}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-[13.5px] font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
+                >
+                  提交答案
+                </button>
+              </div>
+              {choice !== null && (
+                <p className="mt-2 text-[12.5px] text-muted-foreground">
+                  标准写法：
+                  <span className="ml-1 text-foreground" style={{ fontFamily: 'var(--font-mono)' }}>
+                    {display.answers?.[0]}
+                  </span>
+                  （填对后程序输出 {display.expected}）
+                </p>
+              )}
+            </div>
+          ) : (
           <div className="mt-5 grid gap-2 sm:grid-cols-2">
-            {display.options.map((option, optionIndex) => {
+            {(display.options ?? []).map((option, optionIndex) => {
               const isPicked = choice === optionIndex;
               const isAnswer = optionIndex === display.answerIndex;
               const revealed = choice !== null;
@@ -253,21 +361,29 @@ export default function ReadingPage() {
               );
             })}
           </div>
+          )}
 
           {choice !== null && (
             <div className="mt-5 rounded-xl border border-border bg-secondary/30 p-4 md:p-5">
               <div className="flex items-center gap-2">
-                {choice === display.answerIndex ? (
+                {choice !== null && answers[answers.length - 1]?.correct ? (
                   <>
                     <Check className="h-4 w-4 text-primary" />
                     <span className="text-[14.5px] font-medium text-primary">答对了</span>
+                  </>
+                ) : display.kind === 'blank' ? (
+                  <>
+                    <X className="h-4 w-4 text-destructive" />
+                    <span className="text-[14.5px] font-medium text-destructive">
+                      填错了，你写的是「{fillText}」，标准答案是 {display.answers?.[0]}
+                    </span>
                   </>
                 ) : (
                   <>
                     <X className="h-4 w-4 text-destructive" />
                     <span className="text-[14.5px] font-medium text-destructive">
-                      选错了，正确答案是 {OPTION_LETTERS[display.answerIndex]}（
-                      {display.options[display.answerIndex]}）
+                      选错了，正确答案是 {OPTION_LETTERS[display.answerIndex ?? 0]}（
+                      {(display.options ?? [])[display.answerIndex ?? 0]}）
                     </span>
                   </>
                 )}

@@ -76,7 +76,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-5 py-2.5 text-[14.5px] font-medium transition-colors hover:bg-secondary"
             >
               <Code className="h-3.5 w-3.5" />
-              读程序猜输出
+              读程序 · 写结果
             </Link>
           </div>
 

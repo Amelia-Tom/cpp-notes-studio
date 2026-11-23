@@ -60,6 +60,20 @@ body {
   font-variant-ligatures: none;
 }
 
+/* 程序填空题的占位符：蓝底虚线，一眼看到该补哪里 */
+.blank-slot {
+  display: inline-block;
+  min-width: 2.4em;
+  padding: 0 0.4em;
+  border-radius: 4px;
+  background: rgba(0, 113, 227, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(0, 113, 227, 0.28);
+  color: #0071e3;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
 /* 窄窗口下适当收一档，保证 34 列的注释尽量落在可视区内 */
 .code-area[data-compact='true'] {
   font-size: 0.8125rem;

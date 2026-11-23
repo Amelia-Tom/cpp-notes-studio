@@ -20,10 +20,14 @@ export default function CodeCard({ code, title = 'main.cpp', compact = false, cl
   const commentsVisible = useSyncExternalStore(subscribePrefs, showComments, showComments);
   const hasComments = useMemo(() => code.includes('//'), [code]);
 
-  const lines = useMemo(
-    () => highlightCppLines(commentsVisible ? code : stripLineComments(code)),
-    [code, commentsVisible],
-  );
+  const hasBlank = useMemo(() => code.includes('___'), [code]);
+
+  const lines = useMemo(() => {
+    const rendered = highlightCppLines(commentsVisible ? code : stripLineComments(code));
+    if (!hasBlank) return rendered;
+    // 程序填空题：把占位符做成醒目高亮，便于一眼看到要补的位置
+    return rendered.map((line) => line.replace(/___/g, '<span class="blank-slot">___</span>'));
+  }, [code, commentsVisible, hasBlank]);
 
   const handleCopy = async () => {
     try {

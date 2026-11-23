@@ -117,10 +117,17 @@ export default function MistakesPage() {
                   <span className="ml-auto text-[12.5px] text-muted-foreground">错 {record.attempts - record.correctCount} 次</span>
                 </div>
                 <p className="mt-2 text-[13px] text-muted-foreground">考点：{item.point}</p>
-                <p className="mt-1.5 text-[13.5px]">
-                  你选了 <span className="text-destructive">{item.options[record.choice]}</span>，正确答案是
-                  <span className="text-primary"> {item.options[item.answerIndex]}</span>
-                </p>
+                {item.kind === 'blank' ? (
+                  <p className="mt-1.5 text-[13.5px]">
+                    你填的是 <span className="text-destructive">{record.text ?? '（空）'}</span>，标准答案是
+                    <span className="text-primary"> {item.answers?.[0]}</span>
+                  </p>
+                ) : (
+                  <p className="mt-1.5 text-[13.5px]">
+                    你选了 <span className="text-destructive">{item.options?.[record.choice]}</span>，正确答案是
+                    <span className="text-primary"> {item.options?.[item.answerIndex ?? 0]}</span>
+                  </p>
+                )}
                 <div className="mt-3 flex flex-wrap items-center gap-3">
                   <Link to="/reading" className="text-[13.5px] text-primary hover:underline">
                     重做这道类型
