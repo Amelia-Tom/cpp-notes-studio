@@ -1,5 +1,9 @@
 # C++ 笔记 · 少儿编程（GESP 1–8 级）
 
+[![Deploy to GitHub Pages](https://github.com/Amelia-Tom/cpp-notes-studio/actions/workflows/deploy.yml/badge.svg)](https://github.com/Amelia-Tom/cpp-notes-studio/actions/workflows/deploy.yml)
+
+在线访问：<https://amelia-tom.github.io/cpp-notes-studio/>
+
 面向少儿编程 / 信息学入门的 C++ 学习笔记 Web 应用。按 CCF **GESP C++ 1–8 级**认证标准组织内容，覆盖「读教材 → 自讲自评 → 做专项 → 开模拟卷 → 错题复盘 → 看进度」的完整闭环。
 
 ## 功能
