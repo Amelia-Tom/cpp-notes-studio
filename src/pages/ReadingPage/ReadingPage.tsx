@@ -70,13 +70,15 @@ export default function ReadingPage() {
   const [wrongOnly, setWrongOnly] = useState<string[] | null>(null);
   const history = useReadingRecords();
 
+  // 级别计数跟随题型筛选联动，避免「L1 6 题」但筛成填空题只剩 2 题时对不上
   const counts = useMemo(() => {
-    const map: Record<string, number> = { all: READING_ITEMS.length };
+    const scoped = typeFilter === 'all' ? READING_ITEMS : READING_ITEMS.filter((item) => item.kind === typeFilter);
+    const map: Record<string, number> = { all: scoped.length };
     READING_LEVELS.forEach((lv) => {
-      map[String(lv)] = READING_ITEMS.filter((item) => item.level === lv).length;
+      map[String(lv)] = scoped.filter((item) => item.level === lv).length;
     });
     return map;
-  }, []);
+  }, [typeFilter]);
 
   const queue = useMemo<IReadingItem[]>(() => {
     const byLevel = level === 'all' ? READING_ITEMS : READING_ITEMS.filter((item) => item.level === level);
@@ -165,10 +167,21 @@ export default function ReadingPage() {
   const wrongAnswers = answers.filter((answer) => !answer.correct);
   const isEmpty = finalQueue.length === 0;
 
+  // 结算页按题型拆解正确率：猜输出和填空的失分原因并不相同
+  const byKind = useMemo(() => {
+    const stat = { output: { total: 0, right: 0 }, blank: { total: 0, right: 0 } };
+    answers.forEach((answer) => {
+      const kind = READING_ITEMS.find((item) => item.id === answer.itemId)?.kind ?? 'output';
+      stat[kind].total += 1;
+      if (answer.correct) stat[kind].right += 1;
+    });
+    return stat;
+  }, [answers]);
+
   return (
     <div className="mx-auto max-w-4xl px-5 py-10 md:px-10 md:py-14">
       <header className="border-b border-border pb-6">
-        <span className="mono-label">reading · guess the output</span>
+        <span className="mono-label">reading · output &amp; blank</span>
         <h1 className="heading-tight mt-2 text-3xl font-semibold">程序阅读训练</h1>
         <p className="mt-3 max-w-2xl text-[15.5px] leading-[1.8] text-muted-foreground">
           GESP 与 CSP 的选择题里，一大半是「给一段程序，问输出什么」；另有大量程序填空题，考「哪一行/哪个表达式才能让程序得到正确结果」。
@@ -176,7 +189,7 @@ export default function ReadingPage() {
         </p>
         <div className="mt-5 flex flex-wrap gap-x-8 gap-y-3 border-t border-border pt-4">
           {[
-            { value: String(READING_ITEMS.length), label: '分级题目' },
+            { value: String(READING_ITEMS.length), label: '题库总量' },
             { value: '1–8', label: '覆盖级别' },
             { value: answeredCount === 0 ? '—' : `${correctCount}/${answeredCount}`, label: '本轮正确' },
             { value: historyRate === null ? '—' : `${historyRate}%`, label: '累计正确率' },
@@ -431,6 +444,26 @@ export default function ReadingPage() {
                 : `正确率 ${Math.round((correctCount / answers.length) * 100)}%。错题的推演过程值得再读一遍，尤其是循环边界和下标那几处。`}
           </p>
 
+          {(byKind.output.total > 0 || byKind.blank.total > 0) && (
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {(
+                [
+                  { key: 'output', label: '猜输出', stat: byKind.output },
+                  { key: 'blank', label: '程序填空', stat: byKind.blank },
+                ] as const
+              ).map((entry) => (
+                <div key={entry.key} className="rounded-lg border border-border px-3 py-2.5">
+                  <p className="mono-label">{entry.label}</p>
+                  <p className="mt-1 text-[14px] tabular-nums">
+                    {entry.stat.total === 0
+                      ? '本轮未涉及'
+                      : `${entry.stat.right} / ${entry.stat.total} · 正确率 ${Math.round((entry.stat.right / entry.stat.total) * 100)}%`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+
           {wrongAnswers.length > 0 && (
             <div className="mt-5 space-y-2 border-t border-border pt-4">
               <p className="mono-label">错题回顾</p>
@@ -449,7 +482,9 @@ export default function ReadingPage() {
                       {item.title}
                     </span>
                     <span className="text-[12.5px] text-muted-foreground" style={{ fontFamily: 'var(--font-mono)' }}>
-                      你选 {item.options[answer.choice]} ／ 正确 {item.options[item.answerIndex]}
+                      {item.kind === 'blank'
+                        ? `你填 ${answer.text ?? '—'} ／ 标准 ${item.answers?.[0]}`
+                        : `你选 ${item.options?.[answer.choice]} ／ 正确 ${item.options?.[item.answerIndex ?? 0]}`}
                     </span>
                   </div>
                 );
