@@ -41,7 +41,6 @@ export default function GespPage() {
             .map((id) => TOPICS.find((topic) => topic.id === id))
             .filter((topic): topic is NonNullable<typeof topic> => topic !== undefined);
           const done = topics.filter((topic) => progress.completed.includes(topic.id)).length;
-          const questionCount = QUESTIONS.filter((question) => level.topicIds.includes(question.topicId)).length;
           const exam = examRecords[String(level.level)];
           const percent = topics.length > 0 ? Math.round((done / topics.length) * 100) : 0;
 

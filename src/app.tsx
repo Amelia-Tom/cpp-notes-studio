@@ -7,6 +7,7 @@ import PracticePage from '@/pages/PracticePage/PracticePage';
 import MistakesPage from '@/pages/MistakesPage/MistakesPage';
 import ProgressPage from '@/pages/ProgressPage/ProgressPage';
 import GespPage from '@/pages/GespPage/GespPage';
+import ReadingPage from '@/pages/ReadingPage/ReadingPage';
 import NotFoundPage from '@/pages/NotFoundPage/NotFoundPage';
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="topics" element={<TopicsPage />} />
         <Route path="topics/:topicId" element={<TopicDetailPage />} />
         <Route path="practice" element={<PracticePage />} />
+        <Route path="reading" element={<ReadingPage />} />
         <Route path="mistakes" element={<MistakesPage />} />
         <Route path="progress" element={<ProgressPage />} />
         <Route path="gesp" element={<GespPage />} />

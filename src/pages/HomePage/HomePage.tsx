@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Clock, FileCode2, PenLine } from 'lucide-react';
+import { ArrowRight, Clock, Code, FileCode2, PenLine } from 'lucide-react';
 import useProgress from '@/hooks/useProgress';
 import { QUESTIONS, STAGES, TOPICS } from '@/data';
+import { READING_ITEMS } from '@/data/reading';
 import { SELF_TALK_LEVELS, useSelfTalk } from '@/lib/selfTalk';
 import { cn } from '@/lib/utils';
 import CodeCard from '@/components/CodeCard';
@@ -70,6 +71,13 @@ export default function HomePage() {
               <PenLine className="h-3.5 w-3.5" />
               做一组自测
             </Link>
+            <Link
+              to="/reading"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-5 py-2.5 text-[14.5px] font-medium transition-colors hover:bg-secondary"
+            >
+              <Code className="h-3.5 w-3.5" />
+              读程序猜输出
+            </Link>
           </div>
 
           <div className="mt-9 flex flex-wrap gap-x-8 gap-y-4 border-t border-border pt-5">
@@ -77,6 +85,7 @@ export default function HomePage() {
               { value: TOPICS.length, label: '知识点' },
               { value: exampleCount, label: '经典例题' },
               { value: QUESTIONS.length, label: '自测题' },
+              { value: READING_ITEMS.length, label: '阅读题' },
               { value: done, label: '已学' },
             ].map((item) => (
               <div key={item.label}>

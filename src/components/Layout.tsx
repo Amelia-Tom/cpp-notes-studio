@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
-import { BarChart3, BookOpen, GraduationCap, Home, Menu, NotebookPen, PenLine, X, type LucideIcon } from 'lucide-react';
+import { BarChart3, BookOpen, Code, GraduationCap, Home, Menu, NotebookPen, PenLine, X, type LucideIcon } from 'lucide-react';
 import useProgress from '@/hooks/useProgress';
 import { TOPICS } from '@/data';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,7 @@ const NAV: NavItem[] = [
   { to: '/topics', label: '知识点', icon: BookOpen },
   { to: '/gesp', label: 'GESP 大纲', icon: GraduationCap },
   { to: '/practice', label: '练习自测', icon: PenLine },
+  { to: '/reading', label: '程序阅读', icon: Code },
   { to: '/mistakes', label: '错题本', icon: NotebookPen },
   { to: '/progress', label: '学习进度', icon: BarChart3 },
 ];
