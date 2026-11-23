@@ -5,6 +5,7 @@ import { ArrowRight, Check, Lightbulb, RotateCcw, Target, X } from 'lucide-react
 import CodeCard from '@/components/CodeCard';
 import { READING_ITEMS, READING_LEVELS, type IReadingItem } from '@/data/reading';
 import { cn } from '@/lib/utils';
+import { saveReadingAnswer, useReadingRecords } from '@/lib/reading';
 
 interface Answer {
   itemId: string;
@@ -56,6 +57,7 @@ export default function ReadingPage() {
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [finished, setFinished] = useState(false);
   const [wrongOnly, setWrongOnly] = useState<string[] | null>(null);
+  const history = useReadingRecords();
 
   const counts = useMemo(() => {
     const map: Record<string, number> = { all: READING_ITEMS.length };
@@ -71,6 +73,11 @@ export default function ReadingPage() {
   );
 
   const answeredCount = answers.filter((answer) => queue.some((item) => item.id === answer.itemId)).length;
+  const historyRecords = Object.values(history);
+  const historyAttempts = historyRecords.reduce((sum, record) => sum + record.attempts, 0);
+  const historyCorrect = historyRecords.reduce((sum, record) => sum + record.correctCount, 0);
+  const historyRate = historyAttempts > 0 ? Math.round((historyCorrect / historyAttempts) * 100) : null;
+
   const correctCount = answers.filter(
     (answer) => answer.correct && queue.some((item) => item.id === answer.itemId),
   ).length;
@@ -103,10 +110,9 @@ export default function ReadingPage() {
   const submit = (optionIndex: number) => {
     if (choice !== null || !display) return;
     setChoice(optionIndex);
-    setAnswers((prev) => [
-      ...prev,
-      { itemId: display.id, choice: optionIndex, correct: optionIndex === display.answerIndex },
-    ]);
+    const isRight = optionIndex === display.answerIndex;
+    setAnswers((prev) => [...prev, { itemId: display.id, choice: optionIndex, correct: isRight }]);
+    saveReadingAnswer(display.id, optionIndex, isRight);
   };
 
   const next = () => {
@@ -135,6 +141,7 @@ export default function ReadingPage() {
             { value: String(READING_ITEMS.length), label: '分级题目' },
             { value: '1–8', label: '覆盖级别' },
             { value: answeredCount === 0 ? '—' : `${correctCount}/${answeredCount}`, label: '本轮正确' },
+            { value: historyRate === null ? '—' : `${historyRate}%`, label: '累计正确率' },
             { value: `${answeredCount}/${finalQueue.length || 0}`, label: '本轮进度' },
           ].map((stat) => (
             <div key={stat.label}>

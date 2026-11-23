@@ -14,6 +14,8 @@ import useProgress from '@/hooks/useProgress';
 import { resetProgress } from '@/lib/store';
 import { resetSelfTalk, selfTalkWeight, SELF_TALK_LEVELS, useSelfTalk } from '@/lib/selfTalk';
 import { resetExamRecords, useExamRecords } from '@/lib/exam';
+import { READING_ITEMS, READING_LEVELS } from '@/data/reading';
+import { resetReadingRecords, useReadingRecords } from '@/lib/reading';
 
 interface Dimension {
   key: string;
@@ -33,6 +35,14 @@ export default function ProgressPage() {
   const progress = useProgress();
   const examRecords = useExamRecords();
   const selfTalk = useSelfTalk();
+  const readingRecords = useReadingRecords();
+
+  const readingList = Object.values(readingRecords);
+  const readingAttempts = readingList.reduce((sum, record) => sum + record.attempts, 0);
+  const readingCorrect = readingList.reduce((sum, record) => sum + record.correctCount, 0);
+  const readingRate = readingAttempts > 0 ? Math.round((readingCorrect / readingAttempts) * 100) : null;
+  const readingTouched = readingList.length;
+  const readingWrong = readingList.filter((record) => !record.correct).length;
 
   const talkList = Object.values(selfTalk)
     .sort((a, b) => b.at - a.at)
@@ -117,6 +127,7 @@ export default function ProgressPage() {
     resetProgress();
     resetSelfTalk();
     resetExamRecords();
+    resetReadingRecords();
     toast.success('学习记录已清空');
   };
 
@@ -135,7 +146,7 @@ export default function ProgressPage() {
           { label: '已学知识点', value: `${progress.completed.length}/${TOPICS.length}` },
           { label: '练习次数', value: String(progress.records.length) },
           { label: '平均正确率', value: accuracy === null ? '—' : `${accuracy}%` },
-          { label: '待复习错题', value: String(progress.mistakes.length) },
+          { label: '待复习错题', value: String(progress.mistakes.length + readingWrong) },
         ].map((item) => (
           <div key={item.label} className="surface rounded-xl p-4">
             <span className="mono-label">{item.label}</span>
@@ -282,6 +293,59 @@ export default function ProgressPage() {
           </div>
 
           <div className="surface rounded-xl p-5">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-base font-semibold tracking-tight">程序阅读</h2>
+              <Link to="/reading" className="text-[12.5px] text-primary hover:underline">
+                去练 →
+              </Link>
+            </div>
+            {readingAttempts === 0 ? (
+              <p className="mt-2 text-[13.5px] leading-6 text-muted-foreground">
+                还没做过阅读题。<Link to="/reading" className="text-primary hover:underline">读一段程序猜输出</Link>，答完会自动记进这里和错题本。
+              </p>
+            ) : (
+              <>
+                <ul className="mt-3 space-y-2 text-[13.5px]">
+                  <li className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">做过的题目</span>
+                    <span className="tabular-nums">
+                      {readingTouched}/{READING_ITEMS.length}
+                    </span>
+                  </li>
+                  <li className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">累计正确率</span>
+                    <span className="tabular-nums">
+                      {readingRate}%<span className="ml-2 text-muted-foreground">({readingCorrect}/{readingAttempts})</span>
+                    </span>
+                  </li>
+                  <li className="flex items-center justify-between gap-3">
+                    <span className="text-muted-foreground">待重做错题</span>
+                    <span className="tabular-nums">{readingWrong}</span>
+                  </li>
+                </ul>
+                <div className="mt-3 space-y-2 border-t border-border pt-3">
+                  {READING_LEVELS.map((level) => {
+                    const levelItems = READING_ITEMS.filter((item) => item.level === level);
+                    const done = levelItems.filter((item) => readingRecords[item.id] !== undefined).length;
+                    const percent = levelItems.length > 0 ? Math.round((done / levelItems.length) * 100) : 0;
+                    return (
+                      <div key={level} className="flex items-center gap-3">
+                        <span className="mono-label w-6 shrink-0 normal-case tracking-normal">L{level}</span>
+                        <div className="h-1 flex-1 overflow-hidden rounded-full bg-secondary">
+                          <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+                        </div>
+                        <span className="shrink-0 text-[11.5px] tabular-nums text-muted-foreground">
+                          {done}/{levelItems.length}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="surface rounded-xl p-5">
             <h2 className="text-base font-semibold tracking-tight">最近练习</h2>
             {progress.records.length === 0 ? (
               <p className="mt-2 text-[13.5px] text-muted-foreground">
@@ -327,7 +391,7 @@ export default function ProgressPage() {
 
           <div className="rounded-xl border border-border p-5">
             <p className="text-[12.5px] leading-5 text-muted-foreground">
-              当前共 {QUESTIONS.length} 道自测题、{TOPICS.length} 个知识点。学习记录只保存在这台设备的浏览器里。
+              当前共 {QUESTIONS.length} 道自测题、{READING_ITEMS.length} 道阅读题、{TOPICS.length} 个知识点。学习记录只保存在这台设备的浏览器里。
             </p>
             <button
               type="button"
