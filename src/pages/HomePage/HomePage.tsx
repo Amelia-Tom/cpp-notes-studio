@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowRight, Clock, Code, FileCode2, PenLine } from 'lucide-react';
+import { ArrowRight, Clock, Code, FileCode2, Network, PenLine } from 'lucide-react';
 import useProgress from '@/hooks/useProgress';
 import { QUESTIONS, STAGES, TOPICS } from '@/data';
 import { READING_ITEMS } from '@/data/reading';
@@ -77,6 +77,13 @@ export default function HomePage() {
             >
               <Code className="h-3.5 w-3.5" />
               读程序 · 写结果
+            </Link>
+            <Link
+              to="/map"
+              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-5 py-2.5 text-[14.5px] font-medium transition-colors hover:bg-secondary"
+            >
+              <Network className="h-3.5 w-3.5" />
+              知识地图
             </Link>
           </div>
 
