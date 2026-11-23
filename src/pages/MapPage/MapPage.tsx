@@ -2,10 +2,11 @@
 
 import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, CircleDot, GitBranch, Lock, Minus, Plus, Sparkles } from 'lucide-react';
+import { ArrowRight, Check, CircleDot, Flag, GitBranch, Lock, Minus, Plus, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getProgress, subscribe, toggleCompleted } from '@/lib/store';
 import { MAP_BY_ID, MAP_EDGES, MAP_LEVELS, MAP_NODES, PREREQS, collectChain } from '@/data/map';
+import { QUESTIONS } from '@/data';
 import type { IMapNode } from '@/data/map';
 import type { StageId } from '@/data/types';
 
@@ -22,6 +23,8 @@ const STAGE_TONE: Record<StageId, { label: string; accent: string; tint: string 
   cert: { label: '考级', accent: '#4C6B8A', tint: 'rgba(76,107,138,0.08)' },
   contest: { label: '竞赛', accent: '#1D1D1F', tint: 'rgba(29,29,31,0.05)' },
 };
+
+const QUESTION_TOPIC = new Map(QUESTIONS.map((question) => [question.id, question.topicId]));
 
 const STAGE_FILTERS: { key: 'all' | StageId; label: string }[] = [
   { key: 'all', label: '全部' },
@@ -91,6 +94,7 @@ export default function MapPage() {
   const [stageFilter, setStageFilter] = useState<'all' | StageId>('all');
   const [hovered, setHovered] = useState<string | null>(null);
   const [selected, setSelected] = useState<string>('var');
+  const [target, setTarget] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
   const viewportRef = useRef<HTMLDivElement | null>(null);
 
@@ -108,6 +112,35 @@ export default function MapPage() {
     [completed],
   );
 
+  // 每章错题数：只统计自测题（错题本里来自 questions 的记录）
+  const mistakeCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    progress.mistakes.forEach((mistake) => {
+      const topicId = QUESTION_TOPIC.get(mistake.questionId);
+      if (!topicId) return;
+      counts.set(topicId, (counts.get(topicId) ?? 0) + mistake.times);
+    });
+    return counts;
+  }, [progress.mistakes]);
+
+  /** 通往目标章节的完整链路：祖先闭包 + 目标本身，按拓扑层排序 */
+  const pathSteps = useMemo(() => {
+    if (!target) return null;
+    const ids = new Set([target, ...collectChain(target, 'ancestors')]);
+    return [...ids]
+      .map((id) => MAP_BY_ID[id])
+      .filter(Boolean)
+      .sort((a, b) => a.level - b.level || a.order - b.order);
+  }, [target]);
+
+  const pathSet = useMemo(() => (pathSteps ? new Set(pathSteps.map((node) => node.id)) : null), [pathSteps]);
+  const pathIndex = useMemo(
+    () => (pathSteps ? new Map(pathSteps.map((node, index) => [node.id, index + 1])) : null),
+    [pathSteps],
+  );
+  const pathMinutes = pathSteps?.reduce((sum, node) => sum + node.minutes, 0) ?? 0;
+  const pathDone = pathSteps?.filter((node) => completed.has(node.id)).length ?? 0;
+
   const recommended = useMemo(() => {
     const pool = available.length > 0 ? available : MAP_NODES.filter((node) => !completed.has(node.id));
     return pool.slice(0, 3);
@@ -115,8 +148,13 @@ export default function MapPage() {
 
   const selectedNode = MAP_BY_ID[selected] ?? MAP_BY_ID.var;
   const selectedDone = completed.has(selectedNode.id);
+  const selectedMistakes = mistakeCounts.get(selectedNode.id) ?? 0;
 
   const isDimmed = (node: IMapNode) => {
+    if (pathSet) {
+      if (!pathSet.has(node.id)) return true;
+      return false;
+    }
     if (stageFilter !== 'all' && node.stage !== stageFilter) return true;
     if (chain && !chain.has(node.id)) return true;
     return false;
@@ -129,7 +167,8 @@ export default function MapPage() {
         <h1 className="heading-tight mt-2 text-3xl font-semibold">知识地图</h1>
         <p className="mt-3 max-w-3xl text-[15.5px] leading-[1.85] text-muted-foreground">
           35 章按「谁先谁后」的真实依赖排开：横轴越往右，前置链越深。箭头 a → b 表示「a 没弄懂，b 一定卡」，
-          不是教材目录顺序。鼠标停在任意节点上，会点亮它的全部前置与后续。
+          不是教材目录顺序。鼠标停在任意节点上，会点亮它的全部前置与后续；选中某章后再点「以这章为目标」，
+          图上会按 1→n 编号画出通往它的完整链路。
         </p>
       </header>
 
@@ -165,6 +204,17 @@ export default function MapPage() {
               {filter.label}
             </button>
           ))}
+          {target && (
+            <button
+              type="button"
+              onClick={() => setTarget(null)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1.5 text-[12.5px] text-primary"
+            >
+              <Flag className="h-3 w-3" />
+              目标：{MAP_BY_ID[target]?.title}
+              <X className="h-3 w-3" />
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-1 rounded-lg border border-border px-1 py-1">
           <button
@@ -191,6 +241,7 @@ export default function MapPage() {
 
       <p className="mt-2 text-[12px] text-muted-foreground">
         窄窗口下左右拖动查看完整链路，或点右上「适应宽度」把整图缩进来；点任一节点会把它滚到眼前。
+        节点右上角的红色「错 N」是该章在错题本里的累计错题数。
       </p>
 
       <section className="mt-2 rounded-xl border border-border bg-card">
@@ -222,10 +273,11 @@ export default function MapPage() {
                 const from = layout.points[edge.from];
                 const to = layout.points[edge.to];
                 if (!from || !to) return null;
-                const active = chain ? chain.has(edge.from) && chain.has(edge.to) : false;
-                const dimmed =
-                  (stageFilter !== 'all' && MAP_BY_ID[edge.from]?.stage !== stageFilter) ||
-                  (chain !== null && !active);
+                const inPath = pathSet ? pathSet.has(edge.from) && pathSet.has(edge.to) : false;
+                const active = inPath || (chain ? chain.has(edge.from) && chain.has(edge.to) : false);
+                const dimmed = pathSet
+                  ? !inPath
+                  : (stageFilter !== 'all' && MAP_BY_ID[edge.from]?.stage !== stageFilter) || (chain !== null && !active);
                 const x1 = from.x + W;
                 const y1 = from.y + H / 2;
                 const x2 = to.x;
@@ -280,12 +332,33 @@ export default function MapPage() {
                       strokeDasharray={!done && !canStart ? '0' : undefined}
                     />
                     <rect width={4} height={H} rx={2} fill={tone.accent} opacity={done ? 0.9 : 0.35} />
-                    <text x={16} y={19} fontSize={10.5} fill="#8E8E93" fontFamily="var(--font-mono)">
-                      {String(node.order).padStart(2, '0')}
-                    </text>
-                    {node.gesp.length > 0 && (
-                      <text x={W - 12} y={19} fontSize={10.5} fill="#A1A1A6" textAnchor="end" fontFamily="var(--font-mono)">
-                        {node.gesp.map((level) => `L${level}`).join('·')}
+                    {pathIndex?.has(node.id) ? (
+                      <g transform="translate(23 16)">
+                        <circle r={8.5} fill="#0071E3" />
+                        <text y={3.5} fontSize={9.5} fill="#FFFFFF" textAnchor="middle" fontFamily="var(--font-mono)">
+                          {pathIndex.get(node.id)}
+                        </text>
+                      </g>
+                    ) : (
+                      <text x={16} y={19} fontSize={10.5} fill="#8E8E93" fontFamily="var(--font-mono)">
+                        {String(node.order).padStart(2, '0')}
+                      </text>
+                    )}
+                    {(node.gesp.length > 0 || (mistakeCounts.get(node.id) ?? 0) > 0) && (
+                      <text x={W - 12} y={19} fontSize={10.5} textAnchor="end" fontFamily="var(--font-mono)">
+                        {node.gesp.length > 0 && (
+                          <tspan fill="#A1A1A6">{node.gesp.map((level) => `L${level}`).join('·')}</tspan>
+                        )}
+                        {node.gesp.length > 0 && (mistakeCounts.get(node.id) ?? 0) > 0 && (
+                          <tspan fill="#C7C7CC" dx={3}>
+                            ·
+                          </tspan>
+                        )}
+                        {(mistakeCounts.get(node.id) ?? 0) > 0 && (
+                          <tspan fill="#FF453A" dx={3}>
+                            错{Math.min(mistakeCounts.get(node.id) ?? 0, 99)}
+                          </tspan>
+                        )}
                       </text>
                     )}
                     {lines.map((line, lineIndex) => (
@@ -421,6 +494,15 @@ export default function MapPage() {
               </div>
             </div>
 
+            {selectedMistakes > 0 && (
+              <p className="text-[13px]">
+                <span className="text-destructive">本章错题 {selectedMistakes} 道</span>
+                <Link to="/mistakes" className="ml-2 text-primary hover:underline">
+                  去错题本重做
+                </Link>
+              </p>
+            )}
+
             <p className="text-[13px] text-muted-foreground">
               预计精读 {selectedNode.minutes} 分钟 · 共 {selectedNode.prereqs.length + selectedNode.dependents.length} 条直接连线 ·
               全链路 {collectChain(selectedNode.id, 'ancestors').size + collectChain(selectedNode.id, 'descendants').size + 1} 个节点
@@ -448,10 +530,100 @@ export default function MapPage() {
               {selectedDone ? <Check className="h-3.5 w-3.5" /> : <CircleDot className="h-3.5 w-3.5" />}
               {selectedDone ? '已学过，取消标记' : '标记为已学'}
             </button>
+            <button
+              type="button"
+              onClick={() => setTarget(target === selectedNode.id ? null : selectedNode.id)}
+              className={cn(
+                'inline-flex items-center gap-1.5 rounded-lg border px-3.5 py-2 text-[13px] transition-colors',
+                target === selectedNode.id
+                  ? 'border-primary/30 bg-primary/10 text-primary'
+                  : 'border-border text-foreground hover:bg-foreground/[0.04]',
+              )}
+            >
+              <Flag className="h-3.5 w-3.5" />
+              {target === selectedNode.id ? '取消目标' : '以这章为目标'}
+            </button>
           </div>
         </div>
 
         <div className="surface rounded-xl p-5 md:p-6">
+          {target && pathSteps ? (
+            <>
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Flag className="h-4 w-4 shrink-0 text-primary" />
+                  <h2 className="truncate text-[16.5px] font-semibold tracking-tight">
+                    通往「{MAP_BY_ID[target]?.title}」
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTarget(null)}
+                  className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground"
+                  aria-label="清除学习目标"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <p className="mt-1.5 text-[13px] tabular-nums text-muted-foreground">
+                共 {pathSteps.length} 步 · 预计 {pathMinutes} 分钟 · 已完成 {pathDone} 步
+              </p>
+              <div className="mt-2 h-1 w-full overflow-hidden rounded-full bg-border">
+                <div
+                  className="h-full rounded-full bg-primary transition-[width]"
+                  style={{ width: `${Math.round((pathDone / pathSteps.length) * 100)}%` }}
+                />
+              </div>
+
+              <ol className="thin-scroll mt-3 max-h-[330px] space-y-1 overflow-y-auto pr-1">
+                {pathSteps.map((node, index) => {
+                  const done = completed.has(node.id);
+                  return (
+                    <li key={node.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelected(node.id);
+                          const viewport = viewportRef.current;
+                          const point = layout.points[node.id];
+                          if (viewport && point) {
+                            viewport.scrollTo({ left: Math.max(0, point.x * zoom - 90), behavior: 'smooth' });
+                          }
+                        }}
+                        className="flex w-full items-start gap-2.5 rounded-lg border border-border px-2.5 py-2 text-left transition-colors hover:bg-foreground/[0.03]"
+                      >
+                        <span
+                          className={cn(
+                            'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10.5px] tabular-nums',
+                            done
+                              ? 'bg-primary text-primary-foreground'
+                              : 'border border-border bg-card text-muted-foreground',
+                          )}
+                        >
+                          {done ? <Check className="h-3 w-3" /> : index + 1}
+                        </span>
+                        <span className="min-w-0">
+                          <span className={cn('block text-[13px] font-medium', done && 'text-muted-foreground')}>
+                            {node.title}
+                          </span>
+                          <span className="mt-0.5 block text-[11.5px] text-muted-foreground">
+                            {node.minutes} 分钟
+                            {node.id === target ? ' · 目标' : ''}
+                            {(mistakeCounts.get(node.id) ?? 0) > 0 ? ` · 错 ${mistakeCounts.get(node.id)}` : ''}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+
+              <p className="mt-3 border-t border-border pt-3 text-[12px] leading-[1.7] text-muted-foreground">
+                路径 = 目标章节的所有前置闭包，一条不多一条不少。点任一步可直接跳到该章详情；学完记得回来标记「已学」。
+              </p>
+            </>
+          ) : (
+            <>
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             <h2 className="text-[16.5px] font-semibold tracking-tight">接下来最值得学的</h2>
@@ -492,6 +664,8 @@ export default function MapPage() {
               <li>· 虚线圆点表示前置已齐，是当下最省力的突破口。</li>
             </ul>
           </div>
+            </>
+          )}
         </div>
       </section>
 
