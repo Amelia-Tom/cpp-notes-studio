@@ -1,0 +1,136 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./tailwind-theme.css";
+@import "./typography.css";
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "tnum" 1;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+/* 磨砂面板：macOS 工具栏的质感 */
+.glass {
+  background: color-mix(in srgb, var(--card) 78%, transparent);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* 细线描边 + 极轻阴影，用于内容卡片 */
+.surface {
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02), 0 12px 32px -20px rgba(0, 0, 0, 0.18);
+}
+
+/* 区块左侧的发丝线，模仿编辑器行号槽 */
+.gutter {
+  border-left: 2px solid color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.heading-tight {
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+}
+
+.code-area {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.95;
+  tab-size: 4;
+  font-variant-ligatures: none;
+}
+
+/* 窄窗口下适当收一档，保证 34 列的注释尽量落在可视区内 */
+.code-area[data-compact='true'] {
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 760px) {
+  .code-area {
+    font-size: 0.8125rem;
+    line-height: 1.85;
+  }
+}
+
+/* C++ 语法高亮：取 Xcode Light 的配色，与整体中性灰白保持一致 */
+.hljs-keyword,
+.hljs-meta-keyword {
+  color: #ad3a98;
+}
+.hljs-built_in,
+.hljs-title.function_,
+.hljs-title.function {
+  color: #326d74;
+}
+.hljs-type,
+.hljs-title.class_,
+.hljs-title.class {
+  color: #0b4f79;
+}
+.hljs-string,
+.hljs-char.escape_ {
+  color: #c41a16;
+}
+.hljs-number,
+.hljs-literal {
+  color: #1c00cf;
+}
+.hljs-comment {
+  color: #6b7683;
+  font-style: normal;
+}
+.hljs-meta,
+.hljs-preprocessor {
+  color: #78492a;
+}
+.hljs-params {
+  color: #1d1d1f;
+}
+.hljs-operator,
+.hljs-punctuation {
+  color: #4a4a4f;
+}
+
+
+.thin-scroll::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.thin-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--foreground) 14%, transparent);
+  border-radius: 999px;
+}
+
+.thin-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,344 @@
+import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
+import {
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+} from 'recharts';
+import { toast } from 'sonner';
+import { GESP_LEVELS, QUESTIONS, STAGES, TOPICS } from '@/data';
+import useProgress from '@/hooks/useProgress';
+import { resetProgress } from '@/lib/store';
+import { resetSelfTalk, selfTalkWeight, SELF_TALK_LEVELS, useSelfTalk } from '@/lib/selfTalk';
+import { resetExamRecords, useExamRecords } from '@/lib/exam';
+
+interface Dimension {
+  key: string;
+  label: string;
+  topics: string[];
+}
+
+const DIMENSIONS: Dimension[] = [
+  { key: 'grammar', label: '语法与类型', topics: ['var', 'io', 'expr'] },
+  { key: 'flow', label: '流程控制', topics: ['branch', 'loop', 'function'] },
+  { key: 'data', label: '数据组织', topics: ['array', 'string', 'struct'] },
+  { key: 'algo', label: '算法思维', topics: ['sort-search', 'prefix', 'binary-answer', 'greedy'] },
+  { key: 'contest', label: '竞赛能力', topics: ['dp', 'dfs-bfs', 'graph', 'tree', 'number-theory'] },
+];
+
+export default function ProgressPage() {
+  const progress = useProgress();
+  const examRecords = useExamRecords();
+  const selfTalk = useSelfTalk();
+
+  const talkList = Object.values(selfTalk)
+    .sort((a, b) => b.at - a.at)
+    .slice(0, 5)
+    .map((record) => ({
+      record,
+      topic: TOPICS.find((item) => item.id === record.topicId),
+      level: SELF_TALK_LEVELS.find((item) => item.level === record.level),
+    }))
+    .filter((item) => item.topic && item.level);
+
+  const answeredByTopic: Record<string, { total: number; correct: number }> = {};
+  progress.records.forEach((record) => {
+    Object.entries(record.byTopic ?? {}).forEach(([topicId, stat]) => {
+      const current = answeredByTopic[topicId] ?? { total: 0, correct: 0 };
+      answeredByTopic[topicId] = {
+        total: current.total + stat.total,
+        correct: current.correct + stat.correct,
+      };
+    });
+  });
+
+  const radarData = DIMENSIONS.map((dimension) => {
+    const topics = dimension.topics.filter((id) => TOPICS.some((topic) => topic.id === id));
+    const doneCount = topics.filter((id) => progress.completed.includes(id)).length;
+    const completion = topics.length > 0 ? doneCount / topics.length : 0;
+
+    let total = 0;
+    let correct = 0;
+    topics.forEach((id) => {
+      const stat = answeredByTopic[id];
+      if (stat) {
+        total += stat.total;
+        correct += stat.correct;
+      }
+    });
+    const accuracy = total > 0 ? correct / total : 0;
+
+    // 自评维度：讲过「能讲清」得 1 分，卡壳 0.55，只能看懂一半 0.2；一次都没自评按中性 0.5
+    const talks = topics.map((id) => selfTalk[id]).filter((item) => item !== undefined);
+    const talkFactor = talks.length > 0 ? talks.reduce((sum, item) => sum + selfTalkWeight(item.level), 0) / talks.length : 0.5;
+    const score = Math.round(completion * 50 + accuracy * 30 + talkFactor * 20);
+
+    return { dimension: dimension.label, score, fullMark: 100 };
+  });
+
+  const totalAnswers = progress.records.reduce((sum, record) => sum + record.total, 0);
+  const totalCorrect = progress.records.reduce((sum, record) => sum + record.correct, 0);
+  const accuracy = totalAnswers > 0 ? Math.round((totalCorrect / totalAnswers) * 100) : null;
+
+  const stageStats = STAGES.map((stage) => {
+    const stageTopics = TOPICS.filter((topic) => topic.stage === stage.id);
+    const done = stageTopics.filter((topic) => progress.completed.includes(topic.id)).length;
+    return { stage, done, total: stageTopics.length, percent: Math.round((done / stageTopics.length) * 100) };
+  });
+
+  const gespStats = GESP_LEVELS.map((level) => {
+    const levelTopics = level.topicIds
+      .map((id) => TOPICS.find((topic) => topic.id === id))
+      .filter((topic): topic is NonNullable<typeof topic> => topic !== undefined);
+    const done = levelTopics.filter((topic) => progress.completed.includes(topic.id)).length;
+    const percent = levelTopics.length > 0 ? Math.round((done / levelTopics.length) * 100) : 0;
+    return { level, done, total: levelTopics.length, percent };
+  });
+
+  const weakTopics = TOPICS.map((topic) => {
+    const stat = answeredByTopic[topic.id];
+    const talk = selfTalk[topic.id];
+    const rate = stat && stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : null;
+    if (rate === null && !talk) return null;
+    if (rate !== null && rate >= 80 && talk?.level === 'solid') return null;
+    const talkLabel = talk ? SELF_TALK_LEVELS.find((item) => item.level === talk.level)?.label ?? '' : '';
+    const order = talk?.level === 'stuck' ? 0 : talk?.level === 'partial' ? 1 : rate ?? 2;
+    return { topic, rate, total: stat?.total ?? 0, talkLabel, order };
+  })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+    .sort((a, b) => a.order - b.order)
+    .slice(0, 3);
+
+  const handleReset = () => {
+    if (!window.confirm('清空本机的学习进度、练习记录、错题本与自讲自评？此操作不可恢复。')) return;
+    resetProgress();
+    resetSelfTalk();
+    resetExamRecords();
+    toast.success('学习记录已清空');
+  };
+
+  return (
+    <div className="mx-auto max-w-4xl px-5 py-10 md:px-10 md:py-14">
+      <header className="border-b border-border pb-5">
+        <span className="mono-label">progress</span>
+        <h1 className="heading-tight mt-2 text-3xl font-semibold">学习进度</h1>
+        <p className="mt-2 text-[15.5px] leading-[1.8] text-muted-foreground">
+          数据来自你在本机的学习标记与练习记录。完成度影响能力雷达，练习正确率会一起计入。
+        </p>
+      </header>
+
+      <section className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { label: '已学知识点', value: `${progress.completed.length}/${TOPICS.length}` },
+          { label: '练习次数', value: String(progress.records.length) },
+          { label: '平均正确率', value: accuracy === null ? '—' : `${accuracy}%` },
+          { label: '待复习错题', value: String(progress.mistakes.length) },
+        ].map((item) => (
+          <div key={item.label} className="surface rounded-xl p-4">
+            <span className="mono-label">{item.label}</span>
+            <p className="mt-2 text-2xl font-semibold tracking-tight">{item.value}</p>
+          </div>
+        ))}
+      </section>
+
+      <section className="mt-10">
+        <div className="flex items-baseline justify-between border-b border-border pb-2">
+          <h2 className="text-lg font-semibold tracking-tight">阶段推进</h2>
+          <span className="mono-label">completion</span>
+        </div>
+        <div className="mt-5 space-y-4">
+          {stageStats.map(({ stage, done, total, percent }) => (
+            <div key={stage.id}>
+              <div className="flex items-baseline justify-between text-[14.5px]">
+                <span className="font-medium">
+                  {stage.name}
+                  <span className="ml-2 text-[12.5px] text-muted-foreground">{stage.code}</span>
+                </span>
+                <span className="text-muted-foreground">
+                  {done}/{total}
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${percent}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <div className="flex items-baseline justify-between border-b border-border pb-2">
+          <h2 className="text-lg font-semibold tracking-tight">GESP 级别覆盖</h2>
+          <Link to="/gesp" className="text-[13.5px] text-primary hover:underline">
+            查看大纲详情 →
+          </Link>
+        </div>
+        <div className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+          {gespStats.map(({ level, done, total, percent }) => (
+            <div key={level.level}>
+              <div className="flex items-baseline justify-between text-[14.5px]">
+                <span className="font-medium">
+                  <span className="mono-label mr-2 normal-case tracking-normal">L{level.level}</span>
+                  {level.name}
+                </span>
+                <span className="text-muted-foreground">
+                  {done}/{total}
+                </span>
+              </div>
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${percent}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-10">
+        <div className="flex items-baseline justify-between border-b border-border pb-2">
+          <h2 className="text-lg font-semibold tracking-tight">GESP 模拟卷成绩</h2>
+          <span className="mono-label">best · last</span>
+        </div>
+        <div className="mt-4 overflow-hidden rounded-xl border border-border">
+          <table className="w-full text-[13.5px]">
+            <thead className="bg-secondary/60 text-muted-foreground">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium">级别</th>
+                <th className="px-3 py-2 text-right font-medium">最好</th>
+                <th className="px-3 py-2 text-right font-medium">最近</th>
+                <th className="px-3 py-2 text-right font-medium">次数</th>
+                <th className="px-3 py-2 text-right font-medium">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {GESP_LEVELS.map((level) => {
+                const record = examRecords[String(level.level)];
+                return (
+                  <tr key={level.level} className="border-t border-border">
+                    <td className="px-3 py-2">
+                      <span className="mono-label mr-2 normal-case tracking-normal">L{level.level}</span>
+                      {level.name}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">{record ? `${record.best} 分` : '—'}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{record ? `${record.last} 分` : '—'}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{record ? record.tries : 0}</td>
+                    <td className="px-3 py-2 text-right">
+                      <Link to={`/practice?level=${level.level}&mode=exam`} className="text-primary hover:underline">
+                        {record ? '再测一次' : '去测'}
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="mt-10 grid gap-6 lg:grid-cols-[1.2fr_1fr]">
+        <div className="surface rounded-xl p-5">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-lg font-semibold tracking-tight">能力雷达</h2>
+            <span className="mono-label">0—100</span>
+          </div>
+          <div className="mt-4 h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <RadarChart data={radarData} outerRadius="72%">
+                <PolarGrid stroke="#D2D2D7" />
+                <PolarAngleAxis dataKey="dimension" tick={{ fill: '#6E6E73', fontSize: 11 }} />
+                <PolarRadiusAxis domain={[0, 100]} tick={{ fill: '#86868B', fontSize: 9 }} tickCount={5} axisLine={false} />
+                <Radar dataKey="score" stroke="#0071E3" fill="#0071E3" fillOpacity={0.18} strokeWidth={1.5} />
+              </RadarChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="mt-2 text-[12.5px] leading-5 text-muted-foreground">
+            完成度占 50 分、正确率占 30 分、自讲自评占 20 分。没自评过的维度按中性 50% 计。
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          <div className="surface rounded-xl p-5">
+            <h2 className="text-base font-semibold tracking-tight">优先补的三块</h2>
+            {weakTopics.length === 0 ? (
+              <p className="mt-2 text-[13.5px] leading-6 text-muted-foreground">
+                还没有练习数据。做一组自测后，这里会按正确率列出最需要回看的知识点。
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {weakTopics.map(({ topic, rate, total, talkLabel }) => (
+                  <li key={topic.id} className="flex items-center justify-between gap-3 text-[14.5px]">
+                    <Link to={`/topics/${topic.id}`} className="min-w-0 truncate hover:text-primary">
+                      {topic.title}
+                    </Link>
+                    <span className="shrink-0 text-[12.5px] text-muted-foreground">
+                      {rate === null ? talkLabel : `${rate}% · ${total} 题`}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="surface rounded-xl p-5">
+            <h2 className="text-base font-semibold tracking-tight">最近练习</h2>
+            {progress.records.length === 0 ? (
+              <p className="mt-2 text-[13.5px] text-muted-foreground">
+                暂无记录，<Link to="/practice" className="text-primary hover:underline">做一组自测</Link>。
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {progress.records.slice(0, 5).map((record) => (
+                  <li key={record.id} className="flex items-center justify-between gap-3 text-[13.5px]">
+                    <span className="min-w-0 truncate text-muted-foreground">{record.scopeLabel}</span>
+                    <span className="shrink-0 text-foreground">
+                      {record.correct}/{record.total}
+                      <span className="ml-2 text-muted-foreground">{format(new Date(record.at), 'MM-dd HH:mm')}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="surface rounded-xl p-5">
+            <h2 className="text-base font-semibold tracking-tight">自讲自评</h2>
+            {talkList.length === 0 ? (
+              <p className="mt-2 text-[13.5px] leading-6 text-muted-foreground">
+                还没有自评记录。打开任意一节点「开启自测模式」，讲完再给自己评一级。
+              </p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {talkList.map(({ record, topic, level }) => (
+                  <li key={record.topicId} className="flex items-center justify-between gap-3 text-[13.5px]">
+                    <Link to={`/topics/${record.topicId}`} className="min-w-0 truncate hover:text-primary">
+                      {topic?.title}
+                    </Link>
+                    <span className="shrink-0 text-muted-foreground">
+                      {level?.label}
+                      <span className="ml-2">{format(new Date(record.at), 'MM-dd HH:mm')}</span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-border p-5">
+            <p className="text-[12.5px] leading-5 text-muted-foreground">
+              当前共 {QUESTIONS.length} 道自测题、{TOPICS.length} 个知识点。学习记录只保存在这台设备的浏览器里。
+            </p>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="mt-2 text-[12.5px] text-muted-foreground hover:text-destructive"
+            >
+              清空学习记录
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
