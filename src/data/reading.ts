@@ -522,3 +522,58 @@ int main() {
 
 // 扩展题库单独存放，避免单文件过长
 export const READING_ITEMS: IReadingItem[] = [...BASE_ITEMS, ...READING_EXTRA];
+
+/**
+ * 每道阅读题归属哪一章：错题本按章节筛选、知识地图「错 N」角标、
+ * 章节详情里的阅读入口都靠这张表，所以新增阅读题时必须补一条。
+ */
+export const READING_TOPIC: Record<string, string> = {
+  'rd-l1-div': 'expr',
+  'rd-l1-assign': 'expr',
+  'rd-l2-if': 'branch',
+  'rd-l2-loop': 'loop',
+  'rd-l3-array': 'array',
+  'rd-l3-char': 'cast',
+  'rd-l4-func': 'function',
+  'rd-l4-matrix': 'matrix',
+  'rd-l5-fib': 'recurrence',
+  'rd-l5-bubble': 'sort-search',
+  'rd-l5-bsearch': 'sort-search',
+  'rd-l6-prefix': 'prefix',
+  'rd-l6-struct': 'struct',
+  'rd-l6-hanoi': 'recursion',
+  'rd-l7-lis': 'dp',
+  'rd-l7-knapsack': 'dp',
+  'rd-l8-floyd': 'graph',
+  'rd-l8-bfs': 'dfs-bfs',
+  'rd-l8-bitmask': 'base-bit',
+  'rd2-l1-double': 'cast',
+  'rd2-l1-concat': 'io',
+  'rd2-l2-nested': 'loop',
+  'rd2-l2-digit': 'loop',
+  'rd2-l3-string': 'string',
+  'rd2-l4-byvalue': 'function',
+  'rd2-l5-sqrt': 'binary-answer',
+  'rd2-l6-median': 'sort-search',
+  'rd2-l7-stairs': 'dp',
+  'rd2-l8-xor': 'base-bit',
+  'rd2b-l1-loop': 'loop',
+  'rd2b-l1-swap': 'var',
+  'rd2b-l2-leap': 'branch',
+  'rd2b-l2-max': 'branch',
+  'rd2b-l3-reverse': 'array',
+  'rd2b-l3-chardigit': 'cast',
+  'rd2b-l4-fact': 'recursion',
+  'rd2b-l4-diag': 'matrix',
+  'rd2b-l5-bubble': 'sort-search',
+  'rd2b-l5-prefix': 'prefix',
+  'rd2b-l6-fib': 'recurrence',
+  'rd2b-l6-cmp': 'struct',
+  'rd2b-l7-knapsack': 'dp',
+  'rd2b-l8-bfs': 'dfs-bfs',
+};
+
+/** 取某道阅读题所属章节 id；表里没登记的题返回 undefined */
+export function getReadingTopicId(itemId: string): string | undefined {
+  return READING_TOPIC[itemId];
+}

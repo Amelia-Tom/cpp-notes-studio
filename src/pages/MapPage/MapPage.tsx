@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { getProgress, subscribe, toggleCompleted } from '@/lib/store';
 import { MAP_BY_ID, MAP_EDGES, MAP_LEVELS, MAP_NODES, PREREQS, collectChain } from '@/data/map';
 import { QUESTIONS } from '@/data';
+import { getReadingTopicId } from '@/data/reading';
+import { useReadingRecords } from '@/lib/reading';
 import type { IMapNode } from '@/data/map';
 import type { StageId } from '@/data/types';
 
@@ -115,6 +117,7 @@ function buildLayout(nodes: IMapNode[]): ILayout {
 
 export default function MapPage() {
   const progress = useSyncExternalStore(subscribe, getProgress, getProgress);
+  const readingRecords = useReadingRecords();
   const completed = useMemo(() => new Set(progress.completed), [progress.completed]);
   const [stageFilter, setStageFilter] = useState<'all' | StageId>('all');
   const [hovered, setHovered] = useState<string | null>(null);
@@ -137,7 +140,7 @@ export default function MapPage() {
     [completed],
   );
 
-  // 每章错题数：只统计自测题（错题本里来自 questions 的记录）
+  // 每章错题数：自测错题按累计错次，程序阅读错题按「尝试 - 答对」累加
   const mistakeCounts = useMemo(() => {
     const counts = new Map<string, number>();
     progress.mistakes.forEach((mistake) => {
@@ -145,8 +148,15 @@ export default function MapPage() {
       if (!topicId) return;
       counts.set(topicId, (counts.get(topicId) ?? 0) + mistake.times);
     });
+    Object.values(readingRecords).forEach((record) => {
+      if (record.correct) return;
+      const topicId = getReadingTopicId(record.itemId);
+      if (!topicId) return;
+      const wrong = Math.max(record.attempts - record.correctCount, 1);
+      counts.set(topicId, (counts.get(topicId) ?? 0) + wrong);
+    });
     return counts;
-  }, [progress.mistakes]);
+  }, [progress.mistakes, readingRecords]);
 
   /** 通往目标章节的完整链路：祖先闭包 + 目标本身，按拓扑层排序 */
   const pathSteps = useMemo(() => {

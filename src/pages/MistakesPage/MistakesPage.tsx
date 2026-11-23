@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { getTopic, QUESTIONS } from '@/data';
 import useProgress from '@/hooks/useProgress';
 import { removeMistake } from '@/lib/store';
-import { READING_ITEMS } from '@/data/reading';
+import { getReadingTopicId, READING_ITEMS } from '@/data/reading';
 import { removeReadingRecord, useReadingRecords } from '@/lib/reading';
 
 export default function MistakesPage() {
@@ -14,11 +14,16 @@ export default function MistakesPage() {
   const topicParam = searchParams.get('topic') ?? '';
   const fixedTopic = getTopic(topicParam);
 
-  const readingWrong = Object.values(readingRecords)
+  const readingWrongAll = Object.values(readingRecords)
     .filter((record) => !record.correct)
     .map((record) => ({ record, item: READING_ITEMS.find((entry) => entry.id === record.itemId) }))
     .filter((entry): entry is NonNullable<typeof entry> => entry.item !== undefined)
-    .sort((a, b) => new Date(b.record.lastAt).getTime() - new Date(a.record.lastAt).getTime());
+    .sort((a, b) => new Date(b.record.lastAt).getTime() - new Date(a.record.lastAt).getTime())
+    .map((entry) => ({ ...entry, topic: getTopic(getReadingTopicId(entry.item.id) ?? '') }));
+
+  const readingWrong = fixedTopic
+    ? readingWrongAll.filter(({ item }) => getReadingTopicId(item.id) === fixedTopic.id)
+    : readingWrongAll;
 
   const items = progress.mistakes
     .map((entry) => {
@@ -29,13 +34,26 @@ export default function MistakesPage() {
     .sort((a, b) => b.entry.lastAt - a.entry.lastAt);
 
   /** 按章节聚合，点一下只看该章错题（地图的「重做错题」就落到这种视图） */
-  const topicCounts = items.reduce<{ id: string; title: string; order: number; count: number }[]>((acc, item) => {
-    if (!item.topic) return acc;
-    const found = acc.find((entry) => entry.id === item.topic?.id);
-    if (found) found.count += 1;
-    else acc.push({ id: item.topic.id, title: item.topic.title, order: item.topic.order, count: 1 });
-    return acc;
-  }, []).sort((a, b) => b.count - a.count || a.order - b.order);
+  const topicCounts = [
+    ...items.map((item) => ({
+      id: item.topic?.id ?? '',
+      title: item.topic?.title ?? '',
+      order: item.topic?.order ?? 0,
+    })),
+    ...readingWrongAll.map(({ topic }) => ({
+      id: topic?.id ?? '',
+      title: topic?.title ?? '',
+      order: topic?.order ?? 0,
+    })),
+  ]
+    .filter((entry) => entry.id !== '')
+    .reduce<{ id: string; title: string; order: number; count: number }[]>((acc, entry) => {
+      const found = acc.find((item) => item.id === entry.id);
+      if (found) found.count += 1;
+      else acc.push({ ...entry, count: 1 });
+      return acc;
+    }, [])
+    .sort((a, b) => b.count - a.count || a.order - b.order);
 
   const visibleItems = fixedTopic ? items.filter((item) => item.question.topicId === fixedTopic.id) : items;
 
@@ -52,12 +70,12 @@ export default function MistakesPage() {
         <p className="mt-2 text-[15.5px] leading-[1.8] text-muted-foreground">
           {fixedTopic ? (
             <>
-              只看「{fixedTopic.title}」这一章的自测错题，共 {visibleItems.length} 道。全部错题共{' '}
-              {items.length + readingWrong.length} 道。
+              只看「{fixedTopic.title}」这一章，自测 {visibleItems.length} 道、程序阅读 {readingWrong.length} 道。
+              全部错题共 {items.length + readingWrongAll.length} 道。
             </>
           ) : (
             <>
-              自测和程序阅读答错都会自动收进来；同一题再次答对时自动移出。共 {items.length + readingWrong.length} 道
+              自测和程序阅读答错都会自动收进来；同一题再次答对时自动移出。共 {items.length + readingWrongAll.length} 道
               （自测 {items.length} · 阅读 {readingWrong.length}）。
             </>
           )}
@@ -76,7 +94,7 @@ export default function MistakesPage() {
             }
           >
             全部错题
-            <span className="ml-1.5 tabular-nums opacity-70">{items.length}</span>
+            <span className="ml-1.5 tabular-nums opacity-70">{items.length + readingWrongAll.length}</span>
           </button>
           {topicCounts.map((entry) => {
             const active = fixedTopic?.id === entry.id;
@@ -100,7 +118,7 @@ export default function MistakesPage() {
         </div>
       )}
 
-      {items.length === 0 && readingWrong.length === 0 ? (
+      {items.length === 0 && readingWrongAll.length === 0 ? (
         <div className="mt-14 flex flex-col items-center gap-3 text-muted-foreground">
           <CircleCheck className="h-9 w-9 text-primary/70" />
           <p className="text-sm">还没有错题，说明你目前的正确率很稳。</p>
@@ -110,7 +128,7 @@ export default function MistakesPage() {
         </div>
       ) : (
         <div className="mt-6 space-y-3">
-          {fixedTopic && visibleItems.length === 0 && (
+          {fixedTopic && visibleItems.length === 0 && readingWrong.length === 0 && (
             <p className="rounded-xl border border-border bg-card px-4 py-6 text-center text-[13.5px] text-muted-foreground">
               这一章暂时没有错题了。可以
               <Link to={`/practice?topic=${fixedTopic.id}`} className="mx-1 text-primary hover:underline">
@@ -167,7 +185,7 @@ export default function MistakesPage() {
         </div>
       )}
 
-      {readingWrong.length > 0 && !fixedTopic && (
+      {readingWrong.length > 0 && (
         <section className="mt-10">
           <div className="flex items-baseline justify-between border-b border-border pb-2">
             <h2 className="text-lg font-semibold tracking-tight">程序阅读错题</h2>
@@ -176,12 +194,20 @@ export default function MistakesPage() {
             </Link>
           </div>
           <div className="mt-4 space-y-3">
-            {readingWrong.map(({ record, item }) => (
+            {readingWrong.map(({ record, item, topic }) => (
               <div key={item.id} className="surface rounded-xl p-4 md:p-5">
                 <div className="flex flex-wrap items-center gap-2">
                   <Code className="h-3.5 w-3.5 text-muted-foreground" />
                   <span className="mono-label normal-case tracking-normal">L{item.level}</span>
                   <span className="text-[13.5px]">{item.title}</span>
+                  {topic && (
+                    <Link
+                      to={`/topics/${topic.id}`}
+                      className="mono-label normal-case tracking-normal hover:text-primary"
+                    >
+                      {String(topic.order).padStart(2, '0')} · {topic.title}
+                    </Link>
+                  )}
                   <span className="ml-auto text-[12.5px] text-muted-foreground">错 {record.attempts - record.correctCount} 次</span>
                 </div>
                 <p className="mt-2 text-[13px] text-muted-foreground">考点：{item.point}</p>
