@@ -2,7 +2,8 @@
 
 import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, CircleDot, Flag, GitBranch, Lock, Minus, Plus, Sparkles, X } from 'lucide-react';
+import { ArrowRight, Check, ClipboardList, CircleDot, Download, Flag, GitBranch, Lock, Minus, Plus, Sparkles, X } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { getProgress, subscribe, toggleCompleted } from '@/lib/store';
 import { MAP_BY_ID, MAP_EDGES, MAP_LEVELS, MAP_NODES, PREREQS, collectChain } from '@/data/map';
@@ -25,6 +26,30 @@ const STAGE_TONE: Record<StageId, { label: string; accent: string; tint: string 
 };
 
 const QUESTION_TOPIC = new Map(QUESTIONS.map((question) => [question.id, question.topicId]));
+
+/** 把路径导出成可打印/可粘贴的 Markdown 学习计划 */
+function buildPlanMarkdown(steps: IMapNode[], completedSet: Set<string>): string {
+  const minutes = steps.reduce((sum, node) => sum + node.minutes, 0);
+  const doneCount = steps.filter((node) => completedSet.has(node.id)).length;
+  const rows = steps.map((node, index) => {
+    const done = completedSet.has(node.id) ? '已学' : '待学';
+    const gesp = node.gesp.length > 0 ? node.gesp.map((level) => `L${level}`).join('·') : '—';
+    const parents = node.prereqs.length > 0 ? node.prereqs.map((id) => MAP_BY_ID[id]?.title).join('、') : '—';
+    return `| ${index + 1} | ${node.title} | ${gesp} | ${node.minutes} 分钟 | ${done} | ${parents} |`;
+  });
+
+  return [
+    `# 通往「${steps[steps.length - 1]?.title ?? ''}」的学习计划`,
+    '',
+    `共 ${steps.length} 步 · 预计 ${minutes} 分钟 · 已完成 ${doneCount} 步`,
+    '',
+    '| 顺序 | 章节 | GESP | 时长 | 状态 | 直接前置 |',
+    '| --- | --- | --- | --- | --- | --- |',
+    ...rows,
+    '',
+    '> 路径 = 目标章节的所有前置闭包，按拓扑层排序；由 C++ 笔记「知识地图」导出。',
+  ].join('\n');
+}
 
 const STAGE_FILTERS: { key: 'all' | StageId; label: string }[] = [
   { key: 'all', label: '全部' },
@@ -141,6 +166,19 @@ export default function MapPage() {
   const pathMinutes = pathSteps?.reduce((sum, node) => sum + node.minutes, 0) ?? 0;
   const pathDone = pathSteps?.filter((node) => completed.has(node.id)).length ?? 0;
 
+  // 错题优先队列：按累计错次排序，并标出是否已学
+  const reviewQueue = useMemo(
+    () =>
+      MAP_NODES.filter((node) => (mistakeCounts.get(node.id) ?? 0) > 0)
+        .sort(
+          (a, b) =>
+            (mistakeCounts.get(b.id) ?? 0) - (mistakeCounts.get(a.id) ?? 0) || a.order - b.order,
+        )
+        .slice(0, 5),
+    [mistakeCounts],
+  );
+
+
   const recommended = useMemo(() => {
     const pool = available.length > 0 ? available : MAP_NODES.filter((node) => !completed.has(node.id));
     return pool.slice(0, 3);
@@ -149,6 +187,15 @@ export default function MapPage() {
   const selectedNode = MAP_BY_ID[selected] ?? MAP_BY_ID.var;
   const selectedDone = completed.has(selectedNode.id);
   const selectedMistakes = mistakeCounts.get(selectedNode.id) ?? 0;
+
+  const focusNode = (id: string) => {
+    setSelected(id);
+    const viewport = viewportRef.current;
+    const point = layout.points[id];
+    if (viewport && point) {
+      viewport.scrollTo({ left: Math.max(0, point.x * zoom - 90), behavior: 'smooth' });
+    }
+  };
 
   const isDimmed = (node: IMapNode) => {
     if (pathSet) {
@@ -621,6 +668,41 @@ export default function MapPage() {
               <p className="mt-3 border-t border-border pt-3 text-[12px] leading-[1.7] text-muted-foreground">
                 路径 = 目标章节的所有前置闭包，一条不多一条不少。点任一步可直接跳到该章详情；学完记得回来标记「已学」。
               </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(buildPlanMarkdown(pathSteps, completed));
+                      toast.success('学习计划已复制为 Markdown');
+                    } catch {
+                      toast.error('复制失败，请手动选中步骤');
+                    }
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[12.5px] transition-colors hover:bg-foreground/[0.04]"
+                >
+                  <ClipboardList className="h-3.5 w-3.5" />
+                  复制计划
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const markdown = buildPlanMarkdown(pathSteps, completed);
+                    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+                    const url = URL.createObjectURL(blob);
+                    const anchor = document.createElement('a');
+                    anchor.href = url;
+                    anchor.download = `学习计划-${pathSteps[pathSteps.length - 1]?.title ?? 'cpp'}.md`;
+                    anchor.click();
+                    URL.revokeObjectURL(url);
+                    toast.success('已下载 Markdown 学习计划');
+                  }}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[12.5px] transition-colors hover:bg-foreground/[0.04]"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  下载 .md
+                </button>
+              </div>
             </>
           ) : (
             <>
@@ -667,6 +749,60 @@ export default function MapPage() {
             </>
           )}
         </div>
+      </section>
+
+      <section className="mt-8">
+        <div className="flex items-baseline justify-between border-b border-border pb-3">
+          <h2 className="text-[17px] font-semibold tracking-tight">复习优先队列</h2>
+          <span className="mono-label">mistake-first</span>
+        </div>
+        <p className="mt-2 text-[13px] leading-[1.7] text-muted-foreground">
+          按错题本累计错次排序，取前五章。已学却仍错的最该先补，未学的说明新课一上就会踩坑。
+        </p>
+        {reviewQueue.length === 0 ? (
+          <p className="mt-3 text-[13.5px] text-muted-foreground">
+            错题本还是空的。去
+            <Link to="/practice" className="mx-1 text-primary hover:underline">
+              做一组自测
+            </Link>
+            或
+            <Link to="/reading" className="mx-1 text-primary hover:underline">
+              读几段程序
+            </Link>
+            ，错的会自动排到这里。
+          </p>
+        ) : (
+          <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {reviewQueue.map((node, index) => {
+              const count = mistakeCounts.get(node.id) ?? 0;
+              const done = completed.has(node.id);
+              return (
+                <div key={node.id} className="rounded-xl border border-border bg-card p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="mono-label">no.{index + 1}</span>
+                    <span className="rounded-full bg-destructive/10 px-1.5 py-0.5 text-[11px] tabular-nums text-destructive">
+                      错 {count}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-[13.5px] leading-snug font-medium">{node.title}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11.5px] text-muted-foreground">
+                    <span className={cn(done ? 'text-primary' : '')}>{done ? '已学' : '未学'}</span>
+                    <button
+                      type="button"
+                      onClick={() => focusNode(node.id)}
+                      className="text-primary transition-opacity hover:opacity-70"
+                    >
+                      看这章
+                    </button>
+                    <Link to="/mistakes" className="text-primary transition-opacity hover:opacity-70">
+                      重做错题
+                    </Link>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className="mt-6 rounded-xl border border-border bg-secondary/30 p-5">
