@@ -544,7 +544,7 @@ export default function MapPage() {
             {selectedMistakes > 0 && (
               <p className="text-[13px]">
                 <span className="text-destructive">本章错题 {selectedMistakes} 道</span>
-                <Link to="/mistakes" className="ml-2 text-primary hover:underline">
+                <Link to={`/mistakes?topic=${selectedNode.id}`} className="ml-2 text-primary hover:underline">
                   去错题本重做
                 </Link>
               </p>
@@ -794,7 +794,10 @@ export default function MapPage() {
                     >
                       看这章
                     </button>
-                    <Link to="/mistakes" className="text-primary transition-opacity hover:opacity-70">
+                    <Link
+                      to={`/mistakes?topic=${node.id}`}
+                      className="text-primary transition-opacity hover:opacity-70"
+                    >
                       重做错题
                     </Link>
                   </div>

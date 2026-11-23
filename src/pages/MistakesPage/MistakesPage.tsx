@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { CircleCheck, Code, NotebookPen, Trash2 } from 'lucide-react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { CircleCheck, Code, NotebookPen, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTopic, QUESTIONS } from '@/data';
 import useProgress from '@/hooks/useProgress';
@@ -10,6 +10,9 @@ import { removeReadingRecord, useReadingRecords } from '@/lib/reading';
 export default function MistakesPage() {
   const progress = useProgress();
   const readingRecords = useReadingRecords();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const topicParam = searchParams.get('topic') ?? '';
+  const fixedTopic = getTopic(topicParam);
 
   const readingWrong = Object.values(readingRecords)
     .filter((record) => !record.correct)
@@ -25,6 +28,17 @@ export default function MistakesPage() {
     .filter((item): item is NonNullable<typeof item> => item !== null)
     .sort((a, b) => b.entry.lastAt - a.entry.lastAt);
 
+  /** 按章节聚合，点一下只看该章错题（地图的「重做错题」就落到这种视图） */
+  const topicCounts = items.reduce<{ id: string; title: string; order: number; count: number }[]>((acc, item) => {
+    if (!item.topic) return acc;
+    const found = acc.find((entry) => entry.id === item.topic?.id);
+    if (found) found.count += 1;
+    else acc.push({ id: item.topic.id, title: item.topic.title, order: item.topic.order, count: 1 });
+    return acc;
+  }, []).sort((a, b) => b.count - a.count || a.order - b.order);
+
+  const visibleItems = fixedTopic ? items.filter((item) => item.question.topicId === fixedTopic.id) : items;
+
   const handleRemove = (questionId: string) => {
     removeMistake(questionId);
     toast.success('已从错题本移除');
@@ -36,10 +50,55 @@ export default function MistakesPage() {
         <span className="mono-label">mistakes</span>
         <h1 className="heading-tight mt-2 text-3xl font-semibold">错题本</h1>
         <p className="mt-2 text-[15.5px] leading-[1.8] text-muted-foreground">
-          自测和程序阅读答错都会自动收进来；同一题再次答对时自动移出。共 {items.length + readingWrong.length} 道
-          （自测 {items.length} · 阅读 {readingWrong.length}）。
+          {fixedTopic ? (
+            <>
+              只看「{fixedTopic.title}」这一章的自测错题，共 {visibleItems.length} 道。全部错题共{' '}
+              {items.length + readingWrong.length} 道。
+            </>
+          ) : (
+            <>
+              自测和程序阅读答错都会自动收进来；同一题再次答对时自动移出。共 {items.length + readingWrong.length} 道
+              （自测 {items.length} · 阅读 {readingWrong.length}）。
+            </>
+          )}
         </p>
       </header>
+
+      {(topicCounts.length > 0 || fixedTopic) && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setSearchParams({})}
+            className={
+              fixedTopic
+                ? 'rounded-lg border border-border px-3 py-1.5 text-[12.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground'
+                : 'rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-[12.5px] font-medium text-primary'
+            }
+          >
+            全部错题
+            <span className="ml-1.5 tabular-nums opacity-70">{items.length}</span>
+          </button>
+          {topicCounts.map((entry) => {
+            const active = fixedTopic?.id === entry.id;
+            return (
+              <button
+                key={entry.id}
+                type="button"
+                onClick={() => setSearchParams({ topic: entry.id })}
+                className={
+                  active
+                    ? 'inline-flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-[12.5px] font-medium text-primary'
+                    : 'rounded-lg border border-border px-3 py-1.5 text-[12.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground'
+                }
+              >
+                {entry.title}
+                <span className="tabular-nums opacity-70">{entry.count}</span>
+                {active && <X className="h-3 w-3" />}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {items.length === 0 && readingWrong.length === 0 ? (
         <div className="mt-14 flex flex-col items-center gap-3 text-muted-foreground">
@@ -51,7 +110,16 @@ export default function MistakesPage() {
         </div>
       ) : (
         <div className="mt-6 space-y-3">
-          {items.map(({ entry, question, topic }) => (
+          {fixedTopic && visibleItems.length === 0 && (
+            <p className="rounded-xl border border-border bg-card px-4 py-6 text-center text-[13.5px] text-muted-foreground">
+              这一章暂时没有错题了。可以
+              <Link to={`/practice?topic=${fixedTopic.id}`} className="mx-1 text-primary hover:underline">
+                再做一组本章自测
+              </Link>
+              验证一下。
+            </p>
+          )}
+          {visibleItems.map(({ entry, question, topic }) => (
             <div key={question.id} className="surface rounded-xl p-4 md:p-5">
               <div className="flex flex-wrap items-center gap-2">
                 <NotebookPen className="h-3.5 w-3.5 text-muted-foreground" />
@@ -99,7 +167,7 @@ export default function MistakesPage() {
         </div>
       )}
 
-      {readingWrong.length > 0 && (
+      {readingWrong.length > 0 && !fixedTopic && (
         <section className="mt-10">
           <div className="flex items-baseline justify-between border-b border-border pb-2">
             <h2 className="text-lg font-semibold tracking-tight">程序阅读错题</h2>
