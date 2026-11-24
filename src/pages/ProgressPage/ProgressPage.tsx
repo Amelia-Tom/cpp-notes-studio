@@ -17,6 +17,8 @@ import { resetExamRecords, useExamRecords } from '@/lib/exam';
 import { READING_ITEMS, READING_LEVELS } from '@/data/reading';
 import { resetReadingRecords, useReadingRecords } from '@/lib/reading';
 import { resetReviewRounds, useReviewRounds } from '@/lib/review';
+import { computeActivity } from '@/lib/activity';
+import { cn } from '@/lib/utils';
 
 interface Dimension {
   key: string;
@@ -139,6 +141,16 @@ export default function ProgressPage() {
     .sort((a, b) => a.order - b.order)
     .slice(0, 3);
 
+  // 学习节奏：把四份记录按自然日归并，算连续天数与最近 14 天练习量
+  const activity = computeActivity({
+    records: progress.records,
+    rounds: reviewRounds,
+    reading: readingRecords,
+    exams: Object.values(examRecords),
+  });
+  const activityMax = Math.max(1, ...activity.days.map((day) => day.total + day.reading + day.exams));
+  const weekRate = activity.week.total > 0 ? Math.round((activity.week.correct / activity.week.total) * 100) : null;
+
   const handleReset = () => {
     if (!window.confirm('清空本机的学习进度、练习记录、错题本、重练记录与自讲自评？此操作不可恢复。')) return;
     resetProgress();
@@ -171,6 +183,69 @@ export default function ProgressPage() {
             <p className="mt-2 text-2xl font-semibold tracking-tight">{item.value}</p>
           </div>
         ))}
+      </section>
+
+      <section className="mt-6 surface rounded-xl p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div className="flex items-baseline gap-3">
+            <h2 className="text-base font-semibold tracking-tight">学习节奏</h2>
+            <span className="mono-label">last 14 days</span>
+          </div>
+          <div className="text-[13px] text-muted-foreground">
+            最近 7 天：做题 {activity.week.total} 题
+            {weekRate !== null && <span className="ml-1.5 text-foreground tabular-nums">{weekRate}%</span>}
+            <span className="mx-1.5">·</span>重练 {activity.week.reviewRounds} 组
+            <span className="mx-1.5">·</span>阅读 {activity.week.reading} 道
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-end gap-6">
+          <div>
+            <p className="text-3xl font-semibold tracking-tight tabular-nums">
+              {activity.streak}
+              <span className="ml-1 text-[13px] font-normal text-muted-foreground">天</span>
+            </p>
+            <p className="mt-1 text-[12.5px] text-muted-foreground">
+              连续学习
+              {!activity.todayActive && activity.streak > 0 && '（今天还没练，做一组就续上）'}
+              {!activity.todayActive && activity.streak === 0 && '（今天还没开始）'}
+            </p>
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex h-16 items-end gap-1.5">
+              {activity.days.map((day) => {
+                const count = day.total + day.reading + day.exams;
+                const today = day.key === activity.today.key;
+                return (
+                  <div key={day.key} className="group flex h-full flex-1 flex-col items-center justify-end gap-1">
+                    <div
+                      title={`${day.key}：自测/重练 ${day.total} 题 · 阅读 ${day.reading} 道 · 模拟卷 ${day.exams} 次`}
+                      className={cn(
+                        'w-full rounded-sm transition-colors',
+                        day.empty ? 'bg-border/60' : today ? 'bg-primary' : 'bg-primary/45',
+                        day.empty && 'h-[3px]',
+                      )}
+                      style={day.empty ? undefined : { height: `${Math.max(6, Math.round((count / activityMax) * 56))}px` }}
+                    />
+                    <span
+                      className={cn(
+                        'text-[10.5px] tabular-nums',
+                        today ? 'text-primary' : 'text-muted-foreground',
+                      )}
+                    >
+                      {day.label}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <p className="mt-3 text-[12px] leading-5 text-muted-foreground">
+          按自然日归并：自测与重练按题目数、阅读按最后一次作答日、模拟卷按最近一次成绩日计入；今天这列会高亮。
+        </p>
       </section>
 
       <section className="mt-10">
