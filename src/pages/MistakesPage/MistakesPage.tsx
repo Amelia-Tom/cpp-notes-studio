@@ -202,9 +202,17 @@ export default function MistakesPage() {
         <section className="mt-10">
           <div className="flex items-baseline justify-between border-b border-border pb-2">
             <h2 className="text-lg font-semibold tracking-tight">程序阅读错题</h2>
-            <Link to="/reading" className="text-[13.5px] text-primary hover:underline">
-              去重做 →
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link
+                to={`/reading?from=mistakes${fixedTopic ? `&topic=${fixedTopic.id}` : ''}`}
+                className="text-[13.5px] text-primary hover:underline"
+              >
+                重练这 {readingWrong.length} 道
+              </Link>
+              <Link to="/reading" className="text-[13.5px] text-muted-foreground hover:text-foreground">
+                去题库 →
+              </Link>
+            </div>
           </div>
           <div className="mt-4 space-y-3">
             {readingWrong.map(({ record, item, topic }) => (

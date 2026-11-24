@@ -1,9 +1,11 @@
 // EXPORTS: 默认导出 ReadingPage 页面（程序阅读训练：猜输出 + 程序填空）
 
 import { useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Check, Lightbulb, RotateCcw, Target, X } from 'lucide-react';
 import CodeCard from '@/components/CodeCard';
-import { READING_ITEMS, READING_LEVELS, type IReadingItem } from '@/data/reading';
+import { getReadingTopicId, READING_ITEMS, READING_LEVELS, type IReadingItem } from '@/data/reading';
+import { getTopic } from '@/data';
 import { cn } from '@/lib/utils';
 import { saveReadingAnswer, useReadingRecords } from '@/lib/reading';
 
@@ -59,6 +61,23 @@ function LevelChips({
 }
 
 export default function ReadingPage() {
+  const [searchParams] = useSearchParams();
+  const history = useReadingRecords();
+  const topicParam = searchParams.get('topic') ?? '';
+  const fixedTopic = getTopic(topicParam);
+  const reviewMode = searchParams.get('from') === 'mistakes';
+  const mistakesLink = fixedTopic ? `/mistakes?topic=${fixedTopic.id}` : '/mistakes';
+
+  // 错题重练：进入时把所有未答对的阅读错题冻结成这一组，避免答对后记录更新把队列抽短
+  const [reviewIds] = useState<string[]>(() => {
+    if (!reviewMode) return [];
+    return Object.values(history)
+      .filter((record) => !record.correct)
+      .filter((record) => !fixedTopic || getReadingTopicId(record.itemId) === fixedTopic.id)
+      .sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime())
+      .map((record) => record.itemId);
+  });
+
   const [level, setLevel] = useState<number | 'all'>('all');
   const [typeFilter, setTypeFilter] = useState<'all' | 'output' | 'blank'>('all');
   const [index, setIndex] = useState(0);
@@ -67,8 +86,7 @@ export default function ReadingPage() {
   const [fillText, setFillText] = useState<string | null>(null);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [finished, setFinished] = useState(false);
-  const [wrongOnly, setWrongOnly] = useState<string[] | null>(null);
-  const history = useReadingRecords();
+  const [wrongOnly, setWrongOnly] = useState<string[] | null>(reviewMode ? reviewIds : null);
 
   // 级别计数跟随题型筛选联动，避免「L1 6 题」但筛成填空题只剩 2 题时对不上
   const counts = useMemo(() => {
@@ -203,7 +221,18 @@ export default function ReadingPage() {
         </div>
       </header>
 
-      {!finished && (
+      {!finished && reviewMode && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2">
+          <span className="text-[13px] text-muted-foreground">
+            阅读错题重练 · {fixedTopic ? `${fixedTopic.title} · ` : ''}共 {finalQueue.length} 题 · 答对即移出错题本
+          </span>
+          <Link to={mistakesLink} className="text-[13px] text-primary hover:underline">
+            回错题本 →
+          </Link>
+        </div>
+      )}
+
+      {!finished && !reviewMode && (
         <div className="mt-6 space-y-4">
           <LevelChips
             active={level}
@@ -258,11 +287,25 @@ export default function ReadingPage() {
         </div>
       )}
 
-      {isEmpty && !finished && (
+      {isEmpty && !finished && (reviewMode ? (
+        <div className="surface mt-6 rounded-xl p-6 text-center">
+          <p className="text-[14.5px] text-muted-foreground">
+            {fixedTopic ? `「${fixedTopic.title}」这一章` : '错题本里'}暂时没有阅读错题可以重练。
+          </p>
+          <div className="mt-3 flex items-center justify-center gap-4 text-[13.5px]">
+            <Link to="/reading" className="text-primary hover:underline">
+              去做一组阅读题
+            </Link>
+            <Link to={mistakesLink} className="text-muted-foreground hover:text-foreground">
+              回错题本
+            </Link>
+          </div>
+        </div>
+      ) : (
         <div className="surface mt-6 rounded-xl p-6 text-center text-[14.5px] text-muted-foreground">
           这个级别暂时没有题目，换一个级别试试。
         </div>
-      )}
+      ))}
 
       {!isEmpty && !finished && display && (
         <section className="surface mt-4 rounded-xl p-5 md:p-6">
@@ -440,7 +483,9 @@ export default function ReadingPage() {
             {answers.length === 0
               ? '这一轮还没作答。'
               : correctCount === answers.length
-                ? '全对。这个级别的阅读题可以往下一级走了。'
+                ? reviewMode
+                  ? '全对。这一章的阅读错题已经清掉了，可以回错题本看看还剩什么。'
+                  : '全对。这个级别的阅读题可以往下一级走了。'
                 : `正确率 ${Math.round((correctCount / answers.length) * 100)}%。错题的推演过程值得再读一遍，尤其是循环边界和下标那几处。`}
           </p>
 
@@ -500,17 +545,26 @@ export default function ReadingPage() {
                 className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-[13.5px] font-medium text-primary-foreground transition-opacity hover:opacity-90"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                只重做错题
+                只重做本轮错的
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => restart(level)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-[13.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              重新做这一轮
-            </button>
+            {reviewMode ? (
+              <Link
+                to={mistakesLink}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-[13.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+              >
+                回错题本
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={() => restart(level)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-[13.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                重新做这一轮
+              </button>
+            )}
           </div>
         </section>
       )}
