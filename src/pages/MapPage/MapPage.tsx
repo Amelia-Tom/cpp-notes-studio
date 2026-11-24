@@ -305,7 +305,7 @@ export default function MapPage() {
         节点右上角的红色「错 N」是该章在错题本里的累计错题数。
       </p>
 
-      <section className="mt-2 rounded-xl border border-border bg-card">
+      <section className="mt-2 surface overflow-hidden">
         <div ref={viewportRef} className="thin-scroll overflow-auto p-2">
           <div
             style={{
@@ -328,6 +328,12 @@ export default function MapPage() {
                 <marker id="map-arrow-accent" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto">
                   <path d="M0,0 L8,4 L0,8 z" fill="#0071E3" />
                 </marker>
+                {/* 节点玻璃高光：上半段白到透明，模拟玻璃片的反射 */}
+                <linearGradient id="map-node-sheen" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+                  <stop offset="55%" stopColor="rgba(255,255,255,0.35)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                </linearGradient>
               </defs>
 
               {MAP_EDGES.map((edge) => {
@@ -387,11 +393,13 @@ export default function MapPage() {
                       width={W}
                       height={H}
                       rx={11}
-                      fill={done ? 'rgba(0,113,227,0.10)' : canStart ? '#FFFFFF' : 'rgba(250,250,250,0.9)'}
-                      stroke={isSelected ? '#0071E3' : done ? 'rgba(0,113,227,0.45)' : canStart ? '#0071E3' : '#E3E3E8'}
+                      fill={done ? 'rgba(0,113,227,0.12)' : canStart ? 'rgba(255,255,255,0.86)' : 'rgba(252,252,253,0.74)'}
+                      stroke={isSelected ? '#0071E3' : done ? 'rgba(0,113,227,0.45)' : canStart ? '#0071E3' : 'rgba(227,227,232,0.9)'}
                       strokeWidth={isSelected ? 2 : canStart ? 1.4 : 1}
                       strokeDasharray={!done && !canStart ? '0' : undefined}
+                      style={{ filter: 'drop-shadow(0 6px 14px rgba(15,23,42,0.10))' }}
                     />
+                    <rect width={W} height={H} rx={11} fill="url(#map-node-sheen)" pointerEvents="none" />
                     <rect width={4} height={H} rx={2} fill={tone.accent} opacity={done ? 0.9 : 0.35} />
                     {pathIndex?.has(node.id) ? (
                       <g transform="translate(23 16)">
