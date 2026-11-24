@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Check, Lightbulb, RotateCcw, Target, X } from 'lucide-react';
 import CodeCard from '@/components/CodeCard';
+import ReviewClosure from '@/components/ReviewClosure';
 import { getReadingTopicId, READING_ITEMS, READING_LEVELS, type IReadingItem } from '@/data/reading';
 import { getTopic } from '@/data';
 import { cn } from '@/lib/utils';
@@ -578,6 +579,8 @@ export default function ReadingPage() {
           </div>
         </section>
       )}
+
+      {finished && reviewMode && <ReviewClosure topicId={fixedTopic?.id} />}
     </div>
   );
 }

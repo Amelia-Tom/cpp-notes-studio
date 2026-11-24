@@ -1,7 +1,7 @@
 // EXPORTS: 默认导出 MapPage 页面（知识点前置关系地图）
 
 import { useMemo, useRef, useState, useSyncExternalStore } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Check, ClipboardList, CircleDot, Download, Flag, GitBranch, Lock, Minus, Plus, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -120,9 +120,13 @@ export default function MapPage() {
   const readingRecords = useReadingRecords();
   const completed = useMemo(() => new Set(progress.completed), [progress.completed]);
   const [stageFilter, setStageFilter] = useState<'all' | StageId>('all');
+  // 支持 /map?target=<章节> 深链接：直接选中该章并打开路径模式
+  const [searchParams] = useSearchParams();
+  const targetParam = searchParams.get('target') ?? '';
+  const initialTarget = MAP_BY_ID[targetParam] ? targetParam : null;
   const [hovered, setHovered] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string>('var');
-  const [target, setTarget] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string>(initialTarget ?? 'var');
+  const [target, setTarget] = useState<string | null>(initialTarget);
   const [zoom, setZoom] = useState(1);
   const viewportRef = useRef<HTMLDivElement | null>(null);
 

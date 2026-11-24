@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { saveReviewRound } from '@/lib/review';
 import { saveExamResult, useExamRecords } from '@/lib/exam';
 import PracticeResult from '@/components/PracticeResult';
+import ReviewClosure from '@/components/ReviewClosure';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -376,6 +377,7 @@ export default function PracticePage() {
           seconds={seconds}
           typeStats={typeStats}
         />
+        {reviewMode && <ReviewClosure topicId={fixedTopic?.id} />}
       </div>
     );
   }
