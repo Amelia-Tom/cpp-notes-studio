@@ -8,6 +8,7 @@ import ReviewClosure from '@/components/ReviewClosure';
 import { getReadingTopicId, READING_ITEMS, READING_LEVELS, type IReadingItem } from '@/data/reading';
 import { getTopic } from '@/data';
 import { cn } from '@/lib/utils';
+import { useQuizKeys } from '@/hooks/useQuizKeys';
 import { saveReadingAnswer, useReadingRecords } from '@/lib/reading';
 import { saveReviewRound } from '@/lib/review';
 
@@ -193,6 +194,17 @@ export default function ReadingPage() {
     setFillText(null);
   };
 
+  useQuizKeys({
+    enabled: !finished && Boolean(display),
+    optionCount: display && display.kind !== 'blank' ? display.options?.length ?? 0 : 0,
+    submitted: choice !== null,
+    onPick: (optionIndex) => submit(optionIndex),
+    onSubmit: () => {
+      if (display?.kind === 'blank') submitFill();
+    },
+    onNext: next,
+  });
+
   const wrongAnswers = answers.filter((answer) => !answer.correct);
   const isEmpty = finalQueue.length === 0;
 
@@ -356,7 +368,11 @@ export default function ReadingPage() {
                   value={fill}
                   onChange={(event) => setFill(event.target.value)}
                   onKeyDown={(event) => {
-                    if (event.key === 'Enter') submitFill();
+                    if (event.key === 'Enter') {
+                      // 拦下冒泡：全局快捷键也监听 Enter，不 preventDefault 会判两次
+                      event.preventDefault();
+                      submitFill();
+                    }
                   }}
                   disabled={choice !== null}
                   placeholder="填写 ___ 处的内容，例如 i <= n"
@@ -466,7 +482,12 @@ export default function ReadingPage() {
                 <p className="text-[14.5px] leading-[1.9] text-foreground/90">{display.explanation}</p>
               </div>
 
-              <div className="mt-4 flex justify-end">
+              <p className="mt-4 text-right text-[12px] text-muted-foreground">
+                <kbd className="mx-0.5 rounded border border-border bg-secondary/70 px-1">Enter</kbd>
+                {index + 1 >= finalQueue.length ? '看本轮结果' : '下一题'}
+                {display.kind === 'blank' ? '（填空输入框里 Enter 直接判题）' : ''}
+              </p>
+              <div className="mt-2 flex justify-end">
                 <button
                   type="button"
                   onClick={next}

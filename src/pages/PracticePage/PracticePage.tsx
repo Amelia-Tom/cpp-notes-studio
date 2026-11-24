@@ -10,6 +10,7 @@ import { saveReviewRound } from '@/lib/review';
 import { saveExamResult, useExamRecords } from '@/lib/exam';
 import PracticeResult from '@/components/PracticeResult';
 import ReviewClosure from '@/components/ReviewClosure';
+import { useQuizKeys } from '@/hooks/useQuizKeys';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 
@@ -226,6 +227,17 @@ export default function PracticePage() {
     setTypeStats(finalStats);
     setPhase('result');
   };
+
+  useQuizKeys({
+    enabled: phase === 'running',
+    optionCount: current?.type === 'choice' ? current.options?.length ?? 0 : 0,
+    submitted: checked,
+    onPick: (optionIndex) => {
+      if (!checked) setSelected(optionIndex);
+    },
+    onSubmit: submit,
+    onNext: next,
+  });
 
   // 空态只看「这一组有没有题」，不能用 reviewPool（最后一题答对后错题本清空，
   // 结算页还会留在屏幕上，不能被空态顶掉）
@@ -545,6 +557,17 @@ export default function PracticePage() {
           </button>
         )}
       </div>
+
+      <p className="mt-2 pr-1 text-right text-[12px] text-muted-foreground">
+        {current.type === 'choice' ? (
+          <>
+            键盘：<kbd className="rounded border border-border bg-secondary/70 px-1">1</kbd>–
+            <kbd className="rounded border border-border bg-secondary/70 px-1">4</kbd> 或 A–D 选选项 ·
+          </>
+        ) : null}
+        <kbd className="mx-1 rounded border border-border bg-secondary/70 px-1">Enter</kbd>
+        {checked ? '下一题' : '提交答案'}
+      </p>
     </div>
   );
 }
