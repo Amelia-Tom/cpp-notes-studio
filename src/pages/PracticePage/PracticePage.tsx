@@ -6,6 +6,7 @@ import { getStage, getTopic, getTopicGesp, GESP_LEVELS, QUESTIONS, STAGES, TOPIC
 import { recordQuiz, type QuizAnswer } from '@/lib/store';
 import useProgress from '@/hooks/useProgress';
 import { toast } from 'sonner';
+import { saveReviewRound } from '@/lib/review';
 import { saveExamResult, useExamRecords } from '@/lib/exam';
 import PracticeResult from '@/components/PracticeResult';
 import { Input } from '@/components/ui/input';
@@ -208,6 +209,15 @@ export default function PracticePage() {
     });
     const finalStats = stats.filter((item) => item.total > 0);
     recordQuiz(scopeLabel, answers);
+    if (reviewMode) {
+      saveReviewRound({
+        kind: 'practice',
+        topicId: fixedTopic?.id ?? 'all',
+        label: fixedTopic?.title ?? '全部章节',
+        total: answers.length,
+        correct: answers.filter((answer) => answer.correct).length,
+      });
+    }
     if (examMode && level) {
       saveExamResult(level, answers.filter((answer) => answer.correct).length, quiz.length, duration);
     }

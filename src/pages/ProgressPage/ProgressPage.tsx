@@ -16,6 +16,7 @@ import { resetSelfTalk, selfTalkWeight, SELF_TALK_LEVELS, useSelfTalk } from '@/
 import { resetExamRecords, useExamRecords } from '@/lib/exam';
 import { READING_ITEMS, READING_LEVELS } from '@/data/reading';
 import { resetReadingRecords, useReadingRecords } from '@/lib/reading';
+import { resetReviewRounds, useReviewRounds } from '@/lib/review';
 
 interface Dimension {
   key: string;
@@ -36,6 +37,13 @@ export default function ProgressPage() {
   const examRecords = useExamRecords();
   const selfTalk = useSelfTalk();
   const readingRecords = useReadingRecords();
+  const reviewRounds = useReviewRounds();
+  const recentReview = reviewRounds.slice(0, 5);
+  const recentReviewTotal = recentReview.reduce((sum, round) => sum + round.total, 0);
+  const recentReviewRate =
+    recentReviewTotal > 0
+      ? Math.round((recentReview.reduce((sum, round) => sum + round.correct, 0) / recentReviewTotal) * 100)
+      : null;
 
   const readingList = Object.values(readingRecords);
   const readingAttempts = readingList.reduce((sum, record) => sum + record.attempts, 0);
@@ -123,11 +131,12 @@ export default function ProgressPage() {
     .slice(0, 3);
 
   const handleReset = () => {
-    if (!window.confirm('清空本机的学习进度、练习记录、错题本与自讲自评？此操作不可恢复。')) return;
+    if (!window.confirm('清空本机的学习进度、练习记录、错题本、重练记录与自讲自评？此操作不可恢复。')) return;
     resetProgress();
     resetSelfTalk();
     resetExamRecords();
     resetReadingRecords();
+    resetReviewRounds();
     toast.success('学习记录已清空');
   };
 
@@ -363,6 +372,48 @@ export default function ProgressPage() {
                   </li>
                 ))}
               </ul>
+            )}
+          </div>
+
+          <div className="surface rounded-xl p-5">
+            <div className="flex items-baseline justify-between">
+              <h2 className="text-base font-semibold tracking-tight">错题重练</h2>
+              <Link to="/mistakes" className="text-[12.5px] text-primary hover:underline">
+                去错题本 →
+              </Link>
+            </div>
+            {reviewRounds.length === 0 ? (
+              <p className="mt-2 text-[13.5px] leading-6 text-muted-foreground">
+                还没有重练记录。错题本里点「重练这 N 道错题」，每答完一组就会记一条。
+              </p>
+            ) : (
+              <>
+                <p className="mt-2 text-[12.5px] text-muted-foreground">
+                  最近 {recentReview.length} 轮平均正确率
+                  <span className="ml-1.5 font-medium text-foreground tabular-nums">
+                    {recentReviewRate === null ? '—' : `${recentReviewRate}%`}
+                  </span>
+                </p>
+                <ul className="mt-3 space-y-2">
+                  {recentReview.map((round) => (
+                    <li key={round.id} className="flex items-center justify-between gap-3 text-[13.5px]">
+                      <Link
+                        to={round.topicId === 'all' ? '/mistakes' : `/mistakes?topic=${round.topicId}`}
+                        className="flex min-w-0 items-center gap-2 hover:text-primary"
+                      >
+                        <span className="shrink-0 rounded border border-border px-1 py-0.5 text-[11px] text-muted-foreground">
+                          {round.kind === 'reading' ? '阅读' : '自测'}
+                        </span>
+                        <span className="min-w-0 truncate text-muted-foreground">{round.label}</span>
+                      </Link>
+                      <span className="shrink-0 text-foreground tabular-nums">
+                        {round.correct}/{round.total}
+                        <span className="ml-2 text-muted-foreground">{format(new Date(round.at), 'MM-dd HH:mm')}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
           </div>
 

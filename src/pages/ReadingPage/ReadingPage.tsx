@@ -8,6 +8,7 @@ import { getReadingTopicId, READING_ITEMS, READING_LEVELS, type IReadingItem } f
 import { getTopic } from '@/data';
 import { cn } from '@/lib/utils';
 import { saveReadingAnswer, useReadingRecords } from '@/lib/reading';
+import { saveReviewRound } from '@/lib/review';
 
 interface Answer {
   itemId: string;
@@ -173,6 +174,15 @@ export default function ReadingPage() {
 
   const next = () => {
     if (index + 1 >= finalQueue.length) {
+      if (reviewMode) {
+        saveReviewRound({
+          kind: 'reading',
+          topicId: fixedTopic?.id ?? 'all',
+          label: fixedTopic?.title ?? '全部章节',
+          total: answers.length,
+          correct: answers.filter((answer) => answer.correct).length,
+        });
+      }
       setFinished(true);
       return;
     }
