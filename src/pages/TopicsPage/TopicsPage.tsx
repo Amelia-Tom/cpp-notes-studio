@@ -1,11 +1,14 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { Check, CircleAlert, CircleX, Clock, Search, SearchX } from 'lucide-react';
-import { STAGES, TOPICS, getStage, getTopicGesp, getTopicText, type StageId } from '@/data';
+import { Check, CircleAlert, CircleX, Clock, Download, Search, SearchX } from 'lucide-react';
+import { getQuestionsByTopic, STAGES, TOPICS, getStage, getTopicGesp, getTopicText, type StageId } from '@/data';
 import useProgress from '@/hooks/useProgress';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { SELF_TALK_LEVELS, useSelfTalk } from '@/lib/selfTalk';
+import { downloadMarkdown } from '@/lib/markdown';
+import { buildTopicsBundleMarkdown } from '@/lib/topic-export';
+import { toast } from 'sonner';
 
 type StageFilter = 'all' | StageId;
 
@@ -35,6 +38,28 @@ export default function TopicsPage() {
     { id: 'all', label: '全部' },
     ...STAGES.map((item) => ({ id: item.id as StageFilter, label: item.name })),
   ];
+
+  /** 导出当前筛选结果（阶段 + 关键字 + 只看待复习都算），方便按阶段整本打印 */
+  const handleExportBundle = () => {
+    if (list.length === 0) {
+      toast.error('当前筛选下没有章节可导出');
+      return;
+    }
+    const stageName = stage === 'all' ? '全部' : getStage(stage).name;
+    const scopeParts = [stageName];
+    if (keyword.trim()) scopeParts.push(`搜索「${keyword.trim()}」`);
+    if (onlyReview) scopeParts.push('只看待复习');
+    if (list.length !== TOPICS.length) scopeParts.push(`${list.length} 节`);
+
+    const content = buildTopicsBundleMarkdown(
+      list.map((topic) => ({ topic, questions: getQuestionsByTopic(topic.id) })),
+      { scopeLabel: scopeParts.join(' · '), gesp: (topic) => getTopicGesp(topic.id) },
+    );
+    const day = new Date().toISOString().slice(0, 10);
+    const tag = stage === 'all' ? '全部' : stage;
+    downloadMarkdown(content, `讲义-${tag}-${day}.md`);
+    toast.success(`已导出 ${list.length} 节讲义`);
+  };
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-10 md:px-10 md:py-14">
@@ -85,6 +110,14 @@ export default function TopicsPage() {
           aria-pressed={onlyReview}
         >
           只看待复习
+        </button>
+        <button
+          type="button"
+          onClick={handleExportBundle}
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-[13.5px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+        >
+          <Download className="h-3.5 w-3.5" />
+          导出本页笔记
         </button>
       </div>
 
