@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Check, ChevronRight, PenLine, X } from 'lucide-react';
+import { ArrowLeft, Check, ChevronRight, PenLine, Timer, X } from 'lucide-react';
 import type { IQuestion } from '@/data';
 import { getStage, getTopic, getTopicGesp, GESP_LEVELS, QUESTIONS, STAGES, TOPICS, type StageId } from '@/data';
 import { recordQuiz, type QuizAnswer } from '@/lib/store';
@@ -84,6 +84,14 @@ export default function PracticePage() {
   const [startedAt, setStartedAt] = useState(() => Date.now());
   const [seconds, setSeconds] = useState<number | undefined>(undefined);
   const [typeStats, setTypeStats] = useState<{ label: string; correct: number; total: number }[]>([]);
+  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  // 模拟卷才需要秒表；其它题型不跑 interval，省一秒钟一次的重渲染
+  useEffect(() => {
+    if (!examMode || phase !== 'running') return;
+    const timer = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [examMode, phase]);
 
   const pool = reviewMode
     ? reviewPool
@@ -119,6 +127,7 @@ export default function PracticePage() {
       setInput('');
       setChecked(false);
       setStartedAt(Date.now());
+      setNowTick(Date.now());
       setSeconds(undefined);
       setTypeStats([]);
       setPhase('running');
@@ -157,6 +166,7 @@ export default function PracticePage() {
       setInput('');
       setChecked(false);
       setStartedAt(Date.now());
+      setNowTick(Date.now());
       setSeconds(undefined);
       setTypeStats([]);
       setPhase('running');
@@ -170,6 +180,7 @@ export default function PracticePage() {
       setInput('');
       setChecked(false);
       setStartedAt(Date.now());
+      setNowTick(Date.now());
       setSeconds(undefined);
       setTypeStats([]);
       setPhase('running');
@@ -181,6 +192,11 @@ export default function PracticePage() {
   const current = quiz[index];
   const currentCorrect = current ? isCorrect(current, selected, input) : false;
   const canSubmit = current ? (current.type === 'choice' ? selected !== null : input.trim().length > 0) : false;
+  // 模拟卷按「每题 2 分钟」给建议时长：15 题 = 30 分钟
+  const EXAM_PACE_SECONDS = 120;
+  const examSuggested = quiz.length * EXAM_PACE_SECONDS;
+  const examElapsed = Math.max(0, Math.round((nowTick - startedAt) / 1000));
+  const examRatio = examSuggested === 0 ? 0 : examElapsed / examSuggested;
 
   const submit = () => {
     if (!current || checked || !canSubmit) return;
@@ -446,9 +462,26 @@ export default function PracticePage() {
             GESP L{level} {examMode ? '模拟卷' : '专项'} · {levelInfo?.name} · 共 {quiz.length} 题
             {examMode && examRecord && ` · 历史最好 ${examRecord.best} 分`}
           </span>
-          <Link to="/gesp" className="text-[13px] text-primary hover:underline">
-            看本级大纲 →
-          </Link>
+          <div className="flex items-center gap-3">
+            {examMode && (
+              <span
+                className={cn(
+                  'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12.5px] tabular-nums',
+                  examRatio >= 1
+                    ? 'border-destructive/40 bg-destructive/5 text-destructive'
+                    : examRatio >= 0.8
+                      ? 'border-warning/40 bg-warning/10 text-warning'
+                      : 'border-border bg-card text-muted-foreground',
+                )}
+              >
+                <Timer className="h-3.5 w-3.5" />
+                已用时 {clockLabel(examElapsed)} · 建议 {clockLabel(examSuggested)}
+              </span>
+            )}
+            <Link to="/gesp" className="text-[13px] text-primary hover:underline">
+              看本级大纲 →
+            </Link>
+          </div>
         </div>
       )}
 
@@ -472,6 +505,20 @@ export default function PracticePage() {
           )}
         </div>
         <p className="mt-3 text-[16px] leading-7">{current.prompt}</p>
+        {examMode && (
+          <p
+            className={cn(
+              'mt-1.5 text-[12.5px]',
+              examRatio >= 1 ? 'text-destructive' : examRatio >= 0.8 ? 'text-warning' : 'text-muted-foreground',
+            )}
+          >
+            {examRatio >= 1
+              ? `已超建议时长 ${clockLabel(examElapsed - examSuggested)}，这题先放一放，把稳的分拿下`
+              : examRatio >= 0.8
+                ? `用时到建议的 ${Math.round(examRatio * 100)}%，每题建议 2 分钟，别在一道题上磨太久`
+                : `模拟卷建议每题 2 分钟，当前第 ${index + 1} / ${quiz.length} 题`}
+          </p>
+        )}
 
         {current.type === 'choice' ? (
           <div className="mt-5 space-y-2">
@@ -570,4 +617,12 @@ export default function PracticePage() {
       </p>
     </div>
   );
+}
+
+/** 秒数转 mm:ss，模拟卷秒表用 */
+function clockLabel(total: number) {
+  const safe = Math.max(0, Math.round(total));
+  const minutes = Math.floor(safe / 60);
+  const seconds = safe % 60;
+  return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
