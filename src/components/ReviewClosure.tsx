@@ -1,11 +1,13 @@
 // EXPORTS: 默认导出 ReviewClosure 组件（重练结算后的收尾卡：本章错题是否清空、下一章学什么）
 
 import { Link } from 'react-router-dom';
-import { ArrowRight, CheckCircle2, CircleAlert, Map as MapIcon } from 'lucide-react';
+import { ArrowRight, Check, CheckCircle2, CircleAlert, Map as MapIcon } from 'lucide-react';
+import { toast } from 'sonner';
 import { QUESTIONS, getTopic } from '@/data';
 import { getReadingTopicId } from '@/data/reading';
 import { MAP_BY_ID, getDependents } from '@/data/map';
 import useProgress from '@/hooks/useProgress';
+import { markCompleted } from '@/lib/store';
 import { useReadingRecords } from '@/lib/reading';
 
 interface ReviewClosureProps {
@@ -115,6 +117,24 @@ export default function ReviewClosure({ topicId }: ReviewClosureProps) {
             {next.unmet.length === 0 ? '，它的前置都已完成。' : `；还剩 ${next.unmet.length} 章前置没学：${next.unmet.map((id) => MAP_BY_ID[id]?.title ?? id).join('、')}。`}
           </p>
           <div className="mt-3 flex flex-wrap items-center gap-2">
+            {completed.has(topicId) ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3.5 py-2 text-[13px] font-medium text-primary">
+                <Check className="h-3.5 w-3.5" />
+                本章已标记为已学
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  markCompleted(topicId);
+                  toast.success(`已把「${topic?.title ?? topicId}」标记为已学，进度里的「可以学」会往前推一格`);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+              >
+                <Check className="h-3.5 w-3.5" />
+                标记本章为已学
+              </button>
+            )}
             <Link
               to={`/topics/${next.node.id}`}
               className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-[13px] font-medium text-background transition-opacity hover:opacity-85"

@@ -29,7 +29,10 @@ function read(): IReviewRound[] {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw) as IReviewRound[];
-    return Array.isArray(parsed) ? parsed.filter((round) => round && typeof round.id === 'string') : [];
+    // 统一按时间倒序，避免存储顺序被外部改写后走势条与列表错位
+    return Array.isArray(parsed)
+      ? parsed.filter((round) => round && typeof round.id === 'string').sort((a, b) => b.at - a.at)
+      : [];
   } catch {
     return [];
   }

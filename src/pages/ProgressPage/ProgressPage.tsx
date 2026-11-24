@@ -44,6 +44,15 @@ export default function ProgressPage() {
     recentReviewTotal > 0
       ? Math.round((recentReview.reduce((sum, round) => sum + round.correct, 0) / recentReviewTotal) * 100)
       : null;
+  // 走势条：取最近 10 轮，按时间正序排列（最右是最近一轮）
+  const reviewTrend = reviewRounds
+    .slice(0, 10)
+    .map((round) => ({
+      id: round.id,
+      rate: round.total > 0 ? Math.round((round.correct / round.total) * 100) : 0,
+      title: `${round.label} · ${round.correct}/${round.total}`,
+    }))
+    .reverse();
 
   const readingList = Object.values(readingRecords);
   const readingAttempts = readingList.reduce((sum, record) => sum + record.attempts, 0);
@@ -394,6 +403,19 @@ export default function ProgressPage() {
                     {recentReviewRate === null ? '—' : `${recentReviewRate}%`}
                   </span>
                 </p>
+                <div className="mt-3">
+                  <p className="text-[11.5px] text-muted-foreground">近 {reviewTrend.length} 轮正确率走势</p>
+                  <div className="mt-1.5 flex h-8 items-end gap-1">
+                    {reviewTrend.map((point) => (
+                      <div
+                        key={point.id}
+                        title={point.title}
+                        className="flex-1 rounded-sm bg-primary/70"
+                        style={{ height: `${Math.max(4, Math.round((point.rate / 100) * 32))}px` }}
+                      />
+                    ))}
+                  </div>
+                </div>
                 <ul className="mt-3 space-y-2">
                   {recentReview.map((round) => (
                     <li key={round.id} className="flex items-center justify-between gap-3 text-[13.5px]">
