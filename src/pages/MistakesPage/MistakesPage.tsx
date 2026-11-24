@@ -1,11 +1,12 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { CircleCheck, Code, NotebookPen, RotateCcw, Trash2, X } from 'lucide-react';
+import { CircleCheck, Code, Download, NotebookPen, RotateCcw, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTopic, QUESTIONS } from '@/data';
 import useProgress from '@/hooks/useProgress';
 import { removeMistake } from '@/lib/store';
 import { getReadingTopicId, READING_ITEMS } from '@/data/reading';
 import { removeReadingRecord, useReadingRecords } from '@/lib/reading';
+import { buildMistakesMarkdown, downloadMarkdown } from '@/lib/mistakes-export';
 
 export default function MistakesPage() {
   const progress = useProgress();
@@ -60,6 +61,24 @@ export default function MistakesPage() {
   const handleRemove = (questionId: string) => {
     removeMistake(questionId);
     toast.success('已从错题本移除');
+  };
+
+  /** 导出的范围跟随当前筛选：带了 chapter 就只导这一章，方便按章打印 */
+  const handleExport = () => {
+    const scope = fixedTopic ? visibleItems.length + readingWrong.length : items.length + readingWrongAll.length;
+    if (scope === 0) {
+      toast.error('当前范围没有错题可导出');
+      return;
+    }
+    const content = buildMistakesMarkdown(
+      fixedTopic ? visibleItems : items,
+      fixedTopic ? readingWrong : readingWrongAll,
+      { scopeTitle: fixedTopic?.title },
+    );
+    const day = new Date().toISOString().slice(0, 10);
+    const name = fixedTopic ? `错题本-${fixedTopic.id}-${day}.md` : `错题本-全部-${day}.md`;
+    downloadMarkdown(content, name);
+    toast.success(`已导出 ${scope} 道错题（${name}）`);
   };
 
   return (
@@ -128,6 +147,14 @@ export default function MistakesPage() {
             重练这 {fixedTopic ? visibleItems.length : items.length} 道自测错题
           </Link>
           <span className="text-[12.5px] text-muted-foreground">按错次从高到低出题，答对自动移出错题本</span>
+          <button
+            type="button"
+            onClick={handleExport}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-2 text-[13.5px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <Download className="h-3.5 w-3.5" />
+            导出 Markdown
+          </button>
         </div>
       )}
 
