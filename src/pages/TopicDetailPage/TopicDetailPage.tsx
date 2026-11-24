@@ -1,9 +1,9 @@
 import { Link, useParams } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useSyncExternalStore } from 'react';
-import { ArrowLeft, ArrowRight, Check, EyeOff, PenLine, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Download, EyeOff, PenLine, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
-import { GESP_LEVELS, getStage, getTopic, getTopicGesp, TOPICS } from '@/data';
+import { GESP_LEVELS, getQuestionsByTopic, getStage, getTopic, getTopicGesp, TOPICS } from '@/data';
 import useProgress from '@/hooks/useProgress';
 import { toggleCompleted } from '@/lib/store';
 import CodeCard from '@/components/CodeCard';
@@ -12,6 +12,8 @@ import { setShowComments, showComments, subscribePrefs } from '@/lib/prefs';
 import TopicExampleCard from '@/components/TopicExampleCard';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { downloadMarkdown, slugify } from '@/lib/markdown';
+import { buildTopicMarkdown } from '@/lib/topic-export';
 
 const SECTION_NAV = [
   { id: 'concept', label: '概念讲解', num: '01' },
@@ -75,6 +77,20 @@ export default function TopicDetailPage() {
     toast.success(done ? '已取消「已学」标记' : '已标记为学完，进度已更新');
   };
 
+  const handleExportNote = () => {
+    const questions = getQuestionsByTopic(topic.id);
+    const prevTitle = prev ? `${String(prev.order).padStart(2, '0')} · ${prev.title}` : undefined;
+    const nextTitle = next ? `${String(next.order).padStart(2, '0')} · ${next.title}` : undefined;
+    const content = buildTopicMarkdown(topic, questions, {
+      gesp: getTopicGesp(topic.id),
+      prevTitle,
+      nextTitle,
+    });
+    const day = new Date().toISOString().slice(0, 10);
+    downloadMarkdown(content, `${String(topic.order).padStart(2, '0')}-${slugify(topic.title)}-${day}.md`);
+    toast.success(`已导出本章笔记（含 ${questions.length} 道自测题）`);
+  };
+
   return (
     <div className="mx-auto max-w-5xl px-5 py-8 md:px-10 md:py-12">
       <Link to="/topics" className="inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground hover:text-foreground">
@@ -132,6 +148,14 @@ export default function TopicDetailPage() {
           <span className="text-[12.5px] text-muted-foreground">
             自测模式会隐藏全部代码注释，用来检验自己能否讲出每一行在做什么。
           </span>
+          <button
+            type="button"
+            onClick={handleExportNote}
+            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13.5px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          >
+            <Download className="h-3.5 w-3.5" />
+            导出本章笔记
+          </button>
         </div>
       </header>
 

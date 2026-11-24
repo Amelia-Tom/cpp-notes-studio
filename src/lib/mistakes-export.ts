@@ -1,4 +1,4 @@
-// EXPORTS: buildMistakesMarkdown, downloadMarkdown
+// EXPORTS: buildMistakesMarkdown
 
 /**
  * 把错题本导成一份 Markdown：
@@ -8,6 +8,8 @@
  *   这样离线打印或复习时不用再回站上翻。
  * 不依赖 React，纯函数，方便日后加别处导出（比如整章笔记）。
  */
+
+import { fence, stamp } from './markdown';
 
 export interface IExportSelfQuestion {
   entry: { times: number };
@@ -38,16 +40,6 @@ export interface IExportReadingItem {
     explanation: string;
   };
   topic?: { id: string; title: string; order: number };
-}
-
-const stamp = (date: Date) => {
-  const pad = (value: number) => String(value).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
-/** 码块用四个反引号包住，避免题目代码里本身含 ``` 时截断 */
-function fence(code: string): string {
-  return ['````cpp', code.trimEnd(), '````'].join('\n');
 }
 
 function chapterKey(entry: { topic?: { id: string; order: number } }): string {
@@ -165,18 +157,4 @@ export function buildMistakesMarkdown(
   }
 
   return `${lines.join('\n').trimEnd()}\n`;
-}
-
-/** 触发一次本地下载，文件名里带范围与日期，方便多份导出并存 */
-export function downloadMarkdown(content: string, filename: string) {
-  const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  // 立刻 revoke 会让部分浏览器的下载中断，等一拍再释放
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

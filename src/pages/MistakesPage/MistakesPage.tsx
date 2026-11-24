@@ -6,7 +6,8 @@ import useProgress from '@/hooks/useProgress';
 import { removeMistake } from '@/lib/store';
 import { getReadingTopicId, READING_ITEMS } from '@/data/reading';
 import { removeReadingRecord, useReadingRecords } from '@/lib/reading';
-import { buildMistakesMarkdown, downloadMarkdown } from '@/lib/mistakes-export';
+import { buildMistakesMarkdown } from '@/lib/mistakes-export';
+import { downloadMarkdown } from '@/lib/markdown';
 
 export default function MistakesPage() {
   const progress = useProgress();
