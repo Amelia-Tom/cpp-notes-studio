@@ -312,7 +312,7 @@ export default function PracticePage() {
                         'rounded-full border px-3.5 py-1.5 text-[13.5px] transition-colors',
                         scope === item.id
                           ? 'border-foreground bg-foreground text-background'
-                          : 'border-border bg-card text-muted-foreground hover:text-foreground',
+                          : 'glass-chip text-muted-foreground hover:text-foreground',
                       )}
                     >
                       {item.label}
@@ -334,7 +334,7 @@ export default function PracticePage() {
                       'rounded-full border px-3.5 py-1.5 text-[13.5px] transition-colors',
                       size === value
                         ? 'border-foreground bg-foreground text-background'
-                        : 'border-border bg-card text-muted-foreground hover:text-foreground',
+                        : 'glass-chip text-muted-foreground hover:text-foreground',
                     )}
                   >
                     {value} 题
@@ -347,7 +347,7 @@ export default function PracticePage() {
                     'rounded-full border px-3.5 py-1.5 text-[13.5px] transition-colors',
                     size === 'all'
                       ? 'border-foreground bg-foreground text-background'
-                      : 'border-border bg-card text-muted-foreground hover:text-foreground',
+                      : 'glass-chip text-muted-foreground hover:text-foreground',
                   )}
                 >
                   全部
@@ -366,7 +366,7 @@ export default function PracticePage() {
                 <Link
                   key={item.level}
                   to={`/practice?level=${item.level}`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-[12.5px] text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary"
+                  className="inline-flex items-center gap-1.5 rounded-full glass-chip px-2.5 py-1 text-[12.5px] text-foreground/80 transition-colors hover:border-primary/40 hover:text-primary"
                 >
                   L{item.level} · {item.name}
                   <span className="text-[11px] text-muted-foreground">{count}</span>
@@ -443,7 +443,7 @@ export default function PracticePage() {
       </div>
 
       {reviewMode && (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 glass-inset px-3 py-2">
           <span className="text-[13px] text-muted-foreground">
             错题重练 · {fixedTopic ? `${fixedTopic.title} · ` : ''}共 {quiz.length} 题 · 答对即移出错题本
           </span>
@@ -457,7 +457,7 @@ export default function PracticePage() {
       )}
 
       {level && (
-        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2">
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 glass-inset px-3 py-2">
           <span className="text-[13px] text-muted-foreground">
             GESP L{level} {examMode ? '模拟卷' : '专项'} · {levelInfo?.name} · 共 {quiz.length} 题
             {examMode && examRecord && ` · 历史最好 ${examRecord.best} 分`}
@@ -471,7 +471,7 @@ export default function PracticePage() {
                     ? 'border-destructive/40 bg-destructive/5 text-destructive'
                     : examRatio >= 0.8
                       ? 'border-warning/40 bg-warning/10 text-warning'
-                      : 'border-border bg-card text-muted-foreground',
+                      : 'glass-chip text-muted-foreground',
                 )}
               >
                 <Timer className="h-3.5 w-3.5" />
@@ -485,7 +485,7 @@ export default function PracticePage() {
         </div>
       )}
 
-      <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-secondary">
+      <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-white/65">
         <div
           className="h-full rounded-full bg-primary transition-[width]"
           style={{ width: `${((index + 1) / quiz.length) * 100}%` }}
@@ -498,7 +498,7 @@ export default function PracticePage() {
           {topic && (
             <Link
               to={`/topics/${topic.id}`}
-              className="rounded-full border border-border px-2 py-0.5 text-[12.5px] text-muted-foreground hover:text-primary"
+              className="rounded-full glass-chip px-2 py-0.5 text-[12.5px] text-muted-foreground hover:text-primary"
             >
               {topic.title}
             </Link>
@@ -533,11 +533,11 @@ export default function PracticePage() {
                   onClick={() => !checked && setSelected(optionIndex)}
                   disabled={checked}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-lg border px-3.5 py-2.5 text-left text-[14.5px] transition-colors',
+                    'glass-option flex w-full items-center gap-3 rounded-lg px-3.5 py-2.5 text-left text-[14.5px] transition-colors',
                     showCorrect && 'border-primary/50 bg-primary/5',
                     showWrong && 'border-destructive/50 bg-destructive/5',
-                    !checked && isPicked && 'border-foreground/40 bg-secondary',
-                    !checked && !isPicked && 'border-border hover:bg-secondary/60',
+                    !checked && isPicked && 'border-foreground/40 bg-white/65',
+                    !checked && !isPicked && 'hover:bg-white/85',
                   )}
                 >
                   <span
@@ -568,7 +568,7 @@ export default function PracticePage() {
         )}
 
         {checked && (
-          <div className="mt-5 rounded-lg bg-secondary/60 p-3.5">
+          <div className="mt-5 glass-inset p-3.5">
             <p className={cn('text-[14.5px] font-medium', currentCorrect ? 'text-primary' : 'text-destructive')}>
               {currentCorrect ? '答对了' : '答错了'}
               {!currentCorrect && (
@@ -608,11 +608,11 @@ export default function PracticePage() {
       <p className="mt-2 pr-1 text-right text-[12px] text-muted-foreground">
         {current.type === 'choice' ? (
           <>
-            键盘：<kbd className="rounded border border-border bg-secondary/70 px-1">1</kbd>–
-            <kbd className="rounded border border-border bg-secondary/70 px-1">4</kbd> 或 A–D 选选项 ·
+            键盘：<kbd className="glass-chip rounded px-1">1</kbd>–
+            <kbd className="glass-chip rounded px-1">4</kbd> 或 A–D 选选项 ·
           </>
         ) : null}
-        <kbd className="mx-1 rounded border border-border bg-secondary/70 px-1">Enter</kbd>
+        <kbd className="glass-chip mx-1 rounded px-1">Enter</kbd>
         {checked ? '下一题' : '提交答案'}
       </p>
     </div>

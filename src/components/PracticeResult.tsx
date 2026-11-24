@@ -53,7 +53,7 @@ export default function PracticeResult({ quiz, answers, scopeLabel, onRestart, s
           </div>
         )}
         <div className="mx-auto mt-6 flex max-w-xs items-center gap-3">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-secondary">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/65">
             <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
           </div>
           <span className="text-[12.5px] text-muted-foreground">{percent}%</span>
@@ -69,13 +69,13 @@ export default function PracticeResult({ quiz, answers, scopeLabel, onRestart, s
           </button>
           <Link
             to="/mistakes"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-[13.5px] hover:bg-secondary"
+            className="inline-flex items-center gap-1.5 rounded-full glass-chip px-4 py-2 text-[13.5px] hover:bg-white/65"
           >
             去错题本
           </Link>
           <Link
             to="/progress"
-            className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-[13.5px] hover:bg-secondary"
+            className="inline-flex items-center gap-1.5 rounded-full glass-chip px-4 py-2 text-[13.5px] hover:bg-white/65"
           >
             看学习进度
           </Link>
@@ -119,7 +119,7 @@ export default function PracticeResult({ quiz, answers, scopeLabel, onRestart, s
           </div>
         </div>
       ) : (
-        <div className="flex items-center justify-center gap-2 rounded-xl border border-border py-10 text-[14.5px] text-muted-foreground">
+        <div className="flex items-center justify-center gap-2 surface py-10 text-[14.5px] text-muted-foreground">
           <Check className="h-4 w-4 text-primary" />
           全部答对，这组题可以放下了。
         </div>

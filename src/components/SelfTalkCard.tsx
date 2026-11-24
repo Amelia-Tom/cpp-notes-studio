@@ -61,7 +61,7 @@ export default function SelfTalkCard({ topicId }: SelfTalkCardProps) {
               onClick={() => recordSelfTalk(topicId, item.level)}
               className={cn(
                 'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13.5px] transition-colors',
-                active ? TONES[item.level] : 'border-border text-muted-foreground hover:bg-secondary hover:text-foreground',
+                active ? TONES[item.level] : 'border-border text-muted-foreground hover:bg-white/65 hover:text-foreground',
               )}
             >
               <Icon className="h-3.5 w-3.5" />
@@ -72,7 +72,7 @@ export default function SelfTalkCard({ topicId }: SelfTalkCardProps) {
       </div>
 
       {current && (
-        <p className="mt-3 rounded-lg bg-secondary/70 px-3 py-2 text-[13px] leading-[1.7] text-foreground/80">
+        <p className="mt-3 glass-inset px-3 py-2 text-[13px] leading-[1.7] text-foreground/80">
           {current.hint}
           {record && <span className="ml-1 text-muted-foreground">（记录于 {formatAt(record.at)}）</span>}
         </p>

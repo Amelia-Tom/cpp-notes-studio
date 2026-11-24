@@ -240,7 +240,7 @@ export default function MapPage() {
           { label: '依赖连线', value: String(MAP_EDGES.length), hint: `${MAP_LEVELS} 层拓扑深度` },
           { label: '最长链路', value: `${MAP_LEVELS} 层`, hint: '从 env 到 shortest' },
         ].map((stat) => (
-          <div key={stat.label} className="rounded-xl border border-border bg-card px-4 py-3.5">
+          <div key={stat.label} className="surface px-4 py-3.5">
             <p className="mono-label">{stat.label}</p>
             <p className="mt-1 text-[22px] font-semibold tabular-nums tracking-tight">{stat.value}</p>
             <p className="mt-0.5 text-[12.5px] text-muted-foreground">{stat.hint}</p>
@@ -277,7 +277,7 @@ export default function MapPage() {
             </button>
           )}
         </div>
-        <div className="flex items-center gap-1 rounded-lg border border-border px-1 py-1">
+        <div className="flex items-center gap-1 rounded-lg glass-chip px-1 py-1">
           <button
             type="button"
             onClick={() => setZoom((value) => Math.max(0.6, Number((value - 0.1).toFixed(2))))}
@@ -495,7 +495,7 @@ export default function MapPage() {
       <section className="mt-6 grid gap-4 lg:grid-cols-[1.35fr_1fr]">
         <div className="surface rounded-xl p-5 md:p-6">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded border border-border px-1.5 py-0.5 text-[11px] text-muted-foreground">
+            <span className="rounded glass-chip px-1.5 py-0.5 text-[11px] text-muted-foreground">
               {String(selectedNode.order).padStart(2, '0')}
             </span>
             <h2 className="text-[19px] font-semibold tracking-tight">{selectedNode.title}</h2>
@@ -506,7 +506,7 @@ export default function MapPage() {
               {STAGE_TONE[selectedNode.stage].label}篇
             </span>
             {selectedNode.gesp.length > 0 && (
-              <span className="rounded-full border border-border px-2 py-0.5 text-[11.5px] text-muted-foreground">
+              <span className="rounded-full glass-chip px-2 py-0.5 text-[11.5px] text-muted-foreground">
                 {selectedNode.gesp.map((level) => `GESP ${level} 级`).join(' · ')}
               </span>
             )}
@@ -554,7 +554,7 @@ export default function MapPage() {
                       key={child}
                       type="button"
                       onClick={() => setSelected(child)}
-                      className="rounded-lg border border-border px-2.5 py-1 text-[12.5px] text-foreground transition-colors hover:bg-foreground/[0.04]"
+                      className="rounded-lg glass-chip px-2.5 py-1 text-[12.5px] text-foreground transition-colors hover:bg-foreground/[0.04]"
                     >
                       {MAP_BY_ID[child]?.title}
                     </button>
@@ -659,14 +659,14 @@ export default function MapPage() {
                             viewport.scrollTo({ left: Math.max(0, point.x * zoom - 90), behavior: 'smooth' });
                           }
                         }}
-                        className="flex w-full items-start gap-2.5 rounded-lg border border-border px-2.5 py-2 text-left transition-colors hover:bg-foreground/[0.03]"
+                        className="flex w-full items-start gap-2.5 rounded-lg glass-chip px-2.5 py-2 text-left transition-colors hover:bg-foreground/[0.03]"
                       >
                         <span
                           className={cn(
                             'mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10.5px] tabular-nums',
                             done
                               ? 'bg-primary text-primary-foreground'
-                              : 'border border-border bg-card text-muted-foreground',
+                              : 'glass-chip text-muted-foreground',
                           )}
                         >
                           {done ? <Check className="h-3 w-3" /> : index + 1}
@@ -701,7 +701,7 @@ export default function MapPage() {
                       toast.error('复制失败，请手动选中步骤');
                     }
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[12.5px] transition-colors hover:bg-foreground/[0.04]"
+                  className="inline-flex items-center gap-1.5 rounded-lg glass-chip px-3 py-1.5 text-[12.5px] transition-colors hover:bg-foreground/[0.04]"
                 >
                   <ClipboardList className="h-3.5 w-3.5" />
                   复制计划
@@ -719,7 +719,7 @@ export default function MapPage() {
                     URL.revokeObjectURL(url);
                     toast.success('已下载 Markdown 学习计划');
                   }}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-[12.5px] transition-colors hover:bg-foreground/[0.04]"
+                  className="inline-flex items-center gap-1.5 rounded-lg glass-chip px-3 py-1.5 text-[12.5px] transition-colors hover:bg-foreground/[0.04]"
                 >
                   <Download className="h-3.5 w-3.5" />
                   下载 .md
@@ -744,7 +744,7 @@ export default function MapPage() {
                   key={node.id}
                   type="button"
                   onClick={() => setSelected(node.id)}
-                  className="flex w-full items-start gap-3 rounded-lg border border-border px-3 py-2.5 text-left transition-colors hover:bg-foreground/[0.03]"
+                  className="flex w-full items-start gap-3 glass-inset px-3 py-2.5 text-left transition-colors hover:bg-foreground/[0.03]"
                 >
                   <span className="mt-0.5 text-[11.5px] tabular-nums text-muted-foreground">
                     {index + 1}
@@ -799,7 +799,7 @@ export default function MapPage() {
               const count = mistakeCounts.get(node.id) ?? 0;
               const done = completed.has(node.id);
               return (
-                <div key={node.id} className="rounded-xl border border-border bg-card p-3">
+                <div key={node.id} className="surface p-3">
                   <div className="flex items-center justify-between gap-2">
                     <span className="mono-label">no.{index + 1}</span>
                     <span className="rounded-full bg-destructive/10 px-1.5 py-0.5 text-[11px] tabular-nums text-destructive">
@@ -830,7 +830,7 @@ export default function MapPage() {
         )}
       </section>
 
-      <section className="mt-6 rounded-xl border border-border bg-secondary/30 p-5">
+      <section className="mt-6 glass-soft p-5">
         <p className="mono-label">按级别看依赖</p>
         <p className="mt-1.5 text-[13px] leading-[1.75] text-muted-foreground">
           图上只根据「技术依赖」连线：例如 L4 的函数是所有递推、排序、结构体的前提，因此从它向右分叉最密；

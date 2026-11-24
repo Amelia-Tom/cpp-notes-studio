@@ -75,7 +75,7 @@ export default function GespPage() {
                   </div>
                 </div>
                 <div className="flex w-32 items-center gap-2">
-                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-secondary">
+                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/65">
                     <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${percent}%` }} />
                   </div>
                   <span className="w-9 text-right text-[12.5px] tabular-nums text-muted-foreground">{percent}%</span>
@@ -95,7 +95,7 @@ export default function GespPage() {
                   </ul>
                 </div>
                 <div className="space-y-3">
-                  <div className="rounded-lg bg-secondary/70 p-3">
+                  <div className="glass-inset p-3">
                     <span className="mono-label">知识目标</span>
                     <p className="mt-1.5 text-[13.5px] leading-[1.75] text-foreground/80">{level.goal}</p>
                   </div>
@@ -116,7 +116,7 @@ export default function GespPage() {
                   )}
                   <Link
                     to={`/practice?level=${level.level}&mode=exam`}
-                    className="inline-flex items-center gap-1 rounded-full border border-border px-3 py-1.5 text-[12.5px] font-medium transition-colors hover:border-primary/40 hover:text-primary"
+                    className="inline-flex items-center gap-1 rounded-full glass-chip px-3 py-1.5 text-[12.5px] font-medium transition-colors hover:border-primary/40 hover:text-primary"
                   >
                     开模拟卷
                   </Link>
@@ -140,7 +140,7 @@ export default function GespPage() {
                         'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[13px] transition-colors',
                         learned
                           ? 'border-primary/30 bg-primary/10 text-primary'
-                          : 'border-border text-foreground/80 hover:bg-secondary',
+                          : 'border-border text-foreground/80 hover:bg-white/65',
                       )}
                     >
                       {learned && <Check className="h-3 w-3" />}
@@ -157,7 +157,7 @@ export default function GespPage() {
         })}
       </div>
 
-      <footer className="mt-10 rounded-xl border border-border p-5">
+      <footer className="mt-10 surface p-5">
         <div className="flex items-start gap-3">
           <GraduationCap className="mt-0.5 h-4 w-4 text-muted-foreground" />
           <div>

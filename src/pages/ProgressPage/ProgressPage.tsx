@@ -271,7 +271,7 @@ export default function ProgressPage() {
             <button
               type="button"
               onClick={handleExportReport}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[12.5px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-full glass-chip px-3 py-1 text-[12.5px] text-muted-foreground transition-colors hover:bg-white/65 hover:text-foreground"
             >
               <Download className="h-3.5 w-3.5" />
               导出本周报告
@@ -345,7 +345,7 @@ export default function ProgressPage() {
                   {done}/{total}
                 </span>
               </div>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/65">
                 <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${percent}%` }} />
               </div>
             </div>
@@ -372,7 +372,7 @@ export default function ProgressPage() {
                   {done}/{total}
                 </span>
               </div>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white/65">
                 <div className="h-full rounded-full bg-primary transition-[width]" style={{ width: `${percent}%` }} />
               </div>
             </div>
@@ -385,9 +385,9 @@ export default function ProgressPage() {
           <h2 className="text-lg font-semibold tracking-tight">GESP 模拟卷成绩</h2>
           <span className="mono-label">best · last</span>
         </div>
-        <div className="mt-4 overflow-hidden rounded-xl border border-border">
+        <div className="mt-4 surface overflow-hidden">
           <table className="w-full text-[13.5px]">
-            <thead className="bg-secondary/60 text-muted-foreground">
+            <thead className="glass-head text-muted-foreground">
               <tr>
                 <th className="px-3 py-2 text-left font-medium">级别</th>
                 <th className="px-3 py-2 text-right font-medium">最好</th>
@@ -504,7 +504,7 @@ export default function ProgressPage() {
                     return (
                       <div key={level} className="flex items-center gap-3">
                         <span className="mono-label w-6 shrink-0 normal-case tracking-normal">L{level}</span>
-                        <div className="h-1 flex-1 overflow-hidden rounded-full bg-secondary">
+                        <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/65">
                           <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
                         </div>
                         <span className="shrink-0 text-[11.5px] tabular-nums text-muted-foreground">
@@ -578,7 +578,7 @@ export default function ProgressPage() {
                         to={round.topicId === 'all' ? '/mistakes' : `/mistakes?topic=${round.topicId}`}
                         className="flex min-w-0 items-center gap-2 hover:text-primary"
                       >
-                        <span className="shrink-0 rounded border border-border px-1 py-0.5 text-[11px] text-muted-foreground">
+                        <span className="shrink-0 rounded glass-chip px-1 py-0.5 text-[11px] text-muted-foreground">
                           {round.kind === 'reading' ? '阅读' : '自测'}
                         </span>
                         <span className="min-w-0 truncate text-muted-foreground">{round.label}</span>
@@ -617,7 +617,7 @@ export default function ProgressPage() {
             )}
           </div>
 
-          <div className="rounded-xl border border-border p-5">
+          <div className="surface p-5">
             <p className="text-[12.5px] leading-5 text-muted-foreground">
               当前共 {QUESTIONS.length} 道自测题、{READING_ITEMS.length} 道阅读题、{TOPICS.length} 个知识点。学习记录只保存在这台设备的浏览器里。
             </p>

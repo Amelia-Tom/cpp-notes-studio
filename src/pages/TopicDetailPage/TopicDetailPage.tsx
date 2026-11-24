@@ -107,7 +107,7 @@ export default function TopicDetailPage() {
             <Link
               key={level}
               to="/gesp"
-              className="inline-flex items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[12.5px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
+              className="inline-flex items-center gap-1 rounded-full glass-chip px-2 py-0.5 text-[12.5px] text-muted-foreground transition-colors hover:border-primary/40 hover:text-primary"
             >
               对应 GESP L{level}
             </Link>
@@ -125,7 +125,7 @@ export default function TopicDetailPage() {
         </p>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {topic.keywords.map((keyword) => (
-            <span key={keyword} className="rounded-full border border-border px-2 py-0.5 text-[12.5px] text-muted-foreground">
+            <span key={keyword} className="rounded-full glass-chip px-2 py-0.5 text-[12.5px] text-muted-foreground">
               {keyword}
             </span>
           ))}
@@ -138,7 +138,7 @@ export default function TopicDetailPage() {
             className={cn(
               'inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13.5px] transition-colors',
               commentsVisible
-                ? 'border-border text-muted-foreground hover:bg-secondary hover:text-foreground'
+                ? 'border-border text-muted-foreground hover:bg-white/65 hover:text-foreground'
                 : 'border-primary/30 bg-primary/10 text-primary',
             )}
           >
@@ -151,7 +151,7 @@ export default function TopicDetailPage() {
           <button
             type="button"
             onClick={handleExportNote}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-[13.5px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full glass-chip px-3 py-1.5 text-[13.5px] text-muted-foreground transition-colors hover:bg-white/65 hover:text-foreground"
           >
             <Download className="h-3.5 w-3.5" />
             导出本章笔记
@@ -168,7 +168,7 @@ export default function TopicDetailPage() {
           <button
             type="button"
             onClick={() => setShowComments(true)}
-            className="ml-auto rounded-full border border-primary/30 bg-card px-3 py-1 text-[12.5px] text-primary transition-colors hover:bg-primary/10"
+            className="ml-auto rounded-full glass-chip px-3 py-1 text-[12.5px] text-primary transition-colors hover:bg-primary/10"
           >
             退出自测模式
           </button>
@@ -183,7 +183,7 @@ export default function TopicDetailPage() {
                 key={item.id}
                 type="button"
                 onClick={() => scrollTo(item.id)}
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13.5px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13.5px] text-muted-foreground transition-colors hover:bg-white/65 hover:text-foreground"
               >
                 <span style={{ fontFamily: 'var(--font-mono)' }}>{item.num}</span>
                 {item.label}
@@ -213,7 +213,7 @@ export default function TopicDetailPage() {
                   const level = GESP_LEVELS.find((item) => item.level === levelNo);
                   if (!level) return null;
                   return (
-                    <div key={levelNo} className="rounded-xl border border-border bg-card p-4">
+                    <div key={levelNo} className="surface p-4">
                       <div className="flex flex-wrap items-center gap-2">
                         <span
                           className="flex h-6 items-center rounded-md bg-foreground px-1.5 text-[11.5px] font-semibold text-background"
@@ -250,7 +250,7 @@ export default function TopicDetailPage() {
                 </p>
               ))}
             </div>
-            <div className="mt-5 rounded-xl bg-secondary/70 p-4">
+            <div className="mt-5 glass-inset p-4">
               <span className="mono-label">生活类比</span>
               <p className="mt-2 text-[15.5px] leading-[1.8] text-foreground/80">{topic.sections.analogy}</p>
             </div>
@@ -268,7 +268,7 @@ export default function TopicDetailPage() {
           </Section>
 
           <Section id="syntax" num="02" title="语法要点">
-            <ul className="divide-y divide-border rounded-xl border border-border">
+            <ul className="divide-y divide-white/50 rounded-xl glass-chip">
               {topic.sections.syntax.map((item, index) => (
                 <li key={index} className="flex gap-3 px-4 py-2.5">
                   <span className="mt-0.5 text-[12.5px] text-muted-foreground/70" style={{ fontFamily: 'var(--font-mono)' }}>
@@ -360,7 +360,7 @@ export default function TopicDetailPage() {
                 </Button>
                 <Link
                   to={`/practice?topic=${topic.id}`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-2 text-[13.5px] transition-colors hover:bg-secondary"
+                  className="inline-flex items-center gap-1.5 rounded-full glass-chip px-3.5 py-2 text-[13.5px] transition-colors hover:bg-white/65"
                 >
                   <PenLine className="h-3.5 w-3.5" />
                   做本节自测
@@ -379,7 +379,7 @@ export default function TopicDetailPage() {
         {prev ? (
           <Link
             to={`/topics/${prev.id}`}
-            className="group rounded-xl border border-border p-4 transition-colors hover:bg-card"
+            className="glass-soft group p-4 transition-colors hover:bg-white/80"
           >
             <span className="mono-label inline-flex items-center gap-1">
               <ArrowLeft className="h-3 w-3" /> 上一节
@@ -392,7 +392,7 @@ export default function TopicDetailPage() {
         {next ? (
           <Link
             to={`/topics/${next.id}`}
-            className="group rounded-xl border border-border p-4 text-right transition-colors hover:bg-card"
+            className="glass-soft group p-4 text-right transition-colors hover:bg-white/80"
           >
             <span className="mono-label inline-flex items-center gap-1">
               下一节 <ArrowRight className="h-3 w-3" />

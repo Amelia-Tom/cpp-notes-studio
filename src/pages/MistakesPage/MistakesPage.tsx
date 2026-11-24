@@ -109,7 +109,7 @@ export default function MistakesPage() {
             onClick={() => setSearchParams({})}
             className={
               fixedTopic
-                ? 'rounded-lg border border-border px-3 py-1.5 text-[12.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground'
+                ? 'rounded-lg glass-chip px-3 py-1.5 text-[12.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground'
                 : 'rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-[12.5px] font-medium text-primary'
             }
           >
@@ -126,7 +126,7 @@ export default function MistakesPage() {
                 className={
                   active
                     ? 'inline-flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-[12.5px] font-medium text-primary'
-                    : 'rounded-lg border border-border px-3 py-1.5 text-[12.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground'
+                    : 'rounded-lg glass-chip px-3 py-1.5 text-[12.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground'
                 }
               >
                 {entry.title}
@@ -151,7 +151,7 @@ export default function MistakesPage() {
           <button
             type="button"
             onClick={handleExport}
-            className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-2 text-[13.5px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            className="inline-flex items-center gap-1.5 rounded-full glass-chip px-3.5 py-2 text-[13.5px] text-muted-foreground transition-colors hover:bg-white/65 hover:text-foreground"
           >
             <Download className="h-3.5 w-3.5" />
             导出 Markdown
@@ -170,7 +170,7 @@ export default function MistakesPage() {
       ) : (
         <div className="mt-6 space-y-3">
           {fixedTopic && visibleItems.length === 0 && readingWrong.length === 0 && (
-            <p className="rounded-xl border border-border bg-card px-4 py-6 text-center text-[13.5px] text-muted-foreground">
+            <p className="surface px-4 py-6 text-center text-[13.5px] text-muted-foreground">
               这一章暂时没有错题了。可以
               <Link to={`/practice?topic=${fixedTopic.id}`} className="mx-1 text-primary hover:underline">
                 再做一组本章自测

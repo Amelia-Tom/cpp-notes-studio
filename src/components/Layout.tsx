@@ -79,7 +79,7 @@ export default function Layout() {
               <span className="text-foreground">{done}</span> / {TOPICS.length}
             </span>
           </div>
-          <div className="h-1 w-full overflow-hidden rounded-full bg-secondary">
+          <div className="h-1 w-full overflow-hidden rounded-full bg-white/65">
             <div
               className="h-full rounded-full bg-primary transition-[width] duration-500"
               style={{ width: `${(done / TOPICS.length) * 100}%` }}

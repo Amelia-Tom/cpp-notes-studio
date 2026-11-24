@@ -129,7 +129,7 @@ export default function ReviewClosure({ topicId }: ReviewClosureProps) {
                   markCompleted(topicId);
                   toast.success(`已把「${topic?.title ?? topicId}」标记为已学，进度里的「可以学」会往前推一格`);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+                className="inline-flex items-center gap-1.5 rounded-full glass-chip px-3.5 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
               >
                 <Check className="h-3.5 w-3.5" />
                 标记本章为已学
@@ -144,7 +144,7 @@ export default function ReviewClosure({ topicId }: ReviewClosureProps) {
             </Link>
             <Link
               to={`/map?target=${next.node.id}`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-border px-4 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+              className="inline-flex items-center gap-1.5 rounded-full glass-chip px-4 py-2 text-[13px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
             >
               <MapIcon className="h-3.5 w-3.5" />
               看它在知识地图上的位置

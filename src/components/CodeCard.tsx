@@ -47,7 +47,7 @@ export default function CodeCard({ code, title = 'main.cpp', compact = false, cl
         className,
       )}
     >
-      <div className={cn('flex items-center gap-3 border-b border-border bg-secondary/50 px-4', compact ? 'py-2' : 'py-2.5')}>
+      <div className={cn('flex items-center gap-3 border-b border-white/60 glass-inset px-4', compact ? 'py-2' : 'py-2.5')}>
         <div className="flex items-center gap-1.5" aria-hidden>
           <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
@@ -59,7 +59,7 @@ export default function CodeCard({ code, title = 'main.cpp', compact = false, cl
         >
           {title}
         </span>
-        <span className="shrink-0 rounded-full border border-border px-1.5 py-0.5 text-[11.5px] text-muted-foreground">
+        <span className="shrink-0 rounded-full glass-chip px-1.5 py-0.5 text-[11.5px] text-muted-foreground">
           C++17
         </span>
         <div className="ml-auto flex shrink-0 items-center gap-1">
@@ -97,7 +97,7 @@ export default function CodeCard({ code, title = 'main.cpp', compact = false, cl
               <tr key={index} className="group align-top">
                 <td
                   className={cn(
-                    'w-9 select-none border-r border-border/60 bg-secondary/25 pr-2 text-right tabular-nums text-muted-foreground/50',
+                    'w-9 select-none border-r border-white/50 bg-white/40 pr-2 text-right tabular-nums text-muted-foreground/50',
                     compact ? 'text-[11px] leading-[1.95]' : 'text-[11.5px] leading-[1.95]',
                   )}
                   style={{ fontFamily: 'var(--font-mono)' }}

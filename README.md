@@ -27,6 +27,17 @@ React 19 + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui + lucide-react + rech
 
 动效只做「玻璃该有的反应」这三处：卡片滚进视口时有一道极淡的高光斜着扫过（`animation-timeline: view()`，不支持的浏览器退回静态高光）；按钮按下时轻微收缩并微提亮（`scale(0.972)` + `brightness`，尊重 `prefers-reduced-motion`）；知识地图的节点改成半透明玻璃卡片——顶部白到透明的高光层 + 柔投影，已学节点带一层淡蓝，选中的那枚描边加粗成实心蓝。
 
+玻璃不止于外壳：站点里每类元件都有自己的玻璃层级，写进 `src/index.css` 的 `@layer components`，所以 `hover:bg-*`、`border-primary/50` 这类状态工具类仍能压在上面。
+
+- `.surface`：整块内容卡（首页三段、章节的 GESP 卡、错题卡、结果卡、知识点列表整张表、地图整幅图）。
+- `.glass-soft`：相邻章节、章节底部的说明块这类留白多的轻卡。
+- `.glass-inset`：卡片里的内嵌面板——代码卡的文件头、解析块、筛选横幅、自评说明。
+- `.glass-chip`：所有胶囊、徽章、kbd 键位、次级按钮（筛选、阶段、级别、导出、按级别专项练）。
+- `.glass-option`：自测选项与阅读题选项，判对判错时只叠一层 `bg-primary/5` 或 `bg-destructive/5`。
+- `.glass-input`：搜索框、填空答案框、所有 `ui/input`，聚焦时透出一圈蓝。
+- `.glass-head`：进度页三张表格的表头，行分隔改白发丝线，不再出现实心灰表头。
+- toast 也换成玻璃小片（`[data-sonner-toast]` 的 blur + 内高光），提示不会在玻璃页面里显得突兀。
+
 ## 本地运行
 
 ```bash

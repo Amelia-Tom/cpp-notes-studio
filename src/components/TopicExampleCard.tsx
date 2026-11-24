@@ -11,7 +11,7 @@ export default function TopicExampleCard({ example, index }: TopicExampleCardPro
     <article className="surface rounded-xl p-5 md:p-6">
       <div className="flex flex-wrap items-center gap-2">
         <span className="mono-label">example {String(index + 1).padStart(2, '0')}</span>
-        <span className="rounded-full border border-border px-2 py-0.5 text-[12.5px] text-muted-foreground">
+        <span className="rounded-full glass-chip px-2 py-0.5 text-[12.5px] text-muted-foreground">
           {example.difficulty}
         </span>
       </div>
@@ -20,7 +20,7 @@ export default function TopicExampleCard({ example, index }: TopicExampleCardPro
       <p className="mt-2 text-[15.5px] leading-[1.8] text-muted-foreground">{example.problem}</p>
 
       <p
-        className="mt-3 rounded-lg bg-secondary/70 px-3 py-2 text-[14px] text-muted-foreground"
+        className="mt-3 glass-inset px-3 py-2 text-[14px] text-muted-foreground"
         style={{ fontFamily: 'var(--font-mono)' }}
       >
         {example.sample}
@@ -46,7 +46,7 @@ export default function TopicExampleCard({ example, index }: TopicExampleCardPro
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-primary">时间 {example.time}</span>
-        <span className="rounded-full bg-secondary px-2 py-0.5">空间 {example.space}</span>
+        <span className="rounded-full bg-white/65 px-2 py-0.5">空间 {example.space}</span>
         <span className="leading-5">记住：{example.takeaway}</span>
       </div>
     </article>

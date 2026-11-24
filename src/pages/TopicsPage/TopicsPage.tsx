@@ -92,7 +92,7 @@ export default function TopicsPage() {
               'rounded-full border px-3.5 py-1.5 text-[13.5px] transition-colors',
               stage === item.id
                 ? 'border-foreground bg-foreground text-background'
-                : 'border-border bg-card text-muted-foreground hover:text-foreground',
+                : 'glass-chip text-muted-foreground hover:text-foreground',
             )}
           >
             {item.label}
@@ -105,7 +105,7 @@ export default function TopicsPage() {
             'rounded-full border px-3.5 py-1.5 text-[13.5px] transition-colors',
             onlyReview
               ? 'border-[#B26A00]/40 bg-[#B26A00]/10 text-[#B26A00]'
-              : 'border-dashed border-border bg-card text-muted-foreground hover:text-foreground',
+              : 'glass-chip border-dashed text-muted-foreground hover:text-foreground',
           )}
           aria-pressed={onlyReview}
         >
@@ -114,14 +114,15 @@ export default function TopicsPage() {
         <button
           type="button"
           onClick={handleExportBundle}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-[13.5px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+          className="ml-auto inline-flex items-center gap-1.5 rounded-full glass-chip px-3.5 py-1.5 text-[13.5px] text-muted-foreground transition-colors hover:bg-white/65 hover:text-foreground"
         >
           <Download className="h-3.5 w-3.5" />
           导出本页笔记
         </button>
       </div>
 
-      <div className="mt-8 divide-y divide-border border-y border-border">
+      <div className="surface mt-6 p-2 md:p-3">
+        <div className="divide-y divide-white/60 px-1">
         {list.map((topic) => {
           const done = progress.completed.includes(topic.id);
           const talk = selfTalk[topic.id];
@@ -130,7 +131,7 @@ export default function TopicsPage() {
             <Link
               key={topic.id}
               to={`/topics/${topic.id}`}
-              className="group flex items-start gap-4 py-4 transition-colors hover:bg-card/70 md:gap-6"
+              className="group flex items-start gap-4 py-4 transition-colors hover:bg-white/60 md:gap-6"
             >
               <span
                 className="mt-1 w-7 shrink-0 text-[14.5px] text-muted-foreground/70"
@@ -142,7 +143,7 @@ export default function TopicsPage() {
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-[16px] font-medium tracking-tight group-hover:text-primary">{topic.title}</p>
-                  <span className="mono-label rounded-full border border-border px-2 py-0.5 normal-case tracking-normal">
+                  <span className="mono-label rounded-full glass-chip px-2 py-0.5 normal-case tracking-normal">
                     {getStage(topic.stage).code}
                   </span>
                   {getTopicGesp(topic.id).length > 0 && (
@@ -185,6 +186,7 @@ export default function TopicsPage() {
             </Link>
           );
         })}
+        </div>
       </div>
 
       {list.length === 0 && (

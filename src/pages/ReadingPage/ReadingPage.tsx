@@ -245,7 +245,7 @@ export default function ReadingPage() {
       </header>
 
       {!finished && reviewMode && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2">
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-2 glass-inset px-3 py-2">
           <span className="text-[13px] text-muted-foreground">
             阅读错题重练 · {fixedTopic ? `${fixedTopic.title} · ` : ''}共 {finalQueue.length} 题 · 答对即移出错题本
           </span>
@@ -334,7 +334,7 @@ export default function ReadingPage() {
         <section className="surface mt-4 rounded-xl p-5 md:p-6">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="rounded-md border border-border px-1.5 py-0.5 text-[11.5px] text-muted-foreground">
+              <span className="rounded-md glass-chip px-1.5 py-0.5 text-[11.5px] text-muted-foreground">
                 L{display.level}
               </span>
               <h2 className="text-lg font-semibold tracking-tight">{display.title}</h2>
@@ -344,7 +344,7 @@ export default function ReadingPage() {
             </span>
           </div>
 
-          <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-secondary">
+          <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-white/65">
             <div
               className="h-full rounded-full bg-primary transition-[width] duration-500"
               style={{ width: `${((index + (choice === null ? 0 : 1)) / finalQueue.length) * 100}%` }}
@@ -376,7 +376,7 @@ export default function ReadingPage() {
                   }}
                   disabled={choice !== null}
                   placeholder="填写 ___ 处的内容，例如 i <= n"
-                  className="min-w-[240px] flex-1 rounded-lg border border-border bg-card px-3 py-2.5 text-[14.5px] outline-none transition-colors focus:border-primary/40 disabled:opacity-60"
+                  className="glass-input min-w-[240px] flex-1 rounded-lg px-3 py-2.5 text-[14.5px] outline-none transition-colors focus:border-primary/40 disabled:opacity-60"
                   style={{ fontFamily: 'var(--font-mono)' }}
                 />
                 <button
@@ -411,11 +411,11 @@ export default function ReadingPage() {
                   disabled={revealed}
                   onClick={() => submit(optionIndex)}
                   className={cn(
-                    'flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors',
-                    !revealed && 'border-border hover:border-primary/40 hover:bg-primary/[0.04]',
+                    'glass-option flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors',
+                    !revealed && 'hover:border-primary/40 hover:bg-primary/[0.04]',
                     revealed && isAnswer && 'border-primary/40 bg-primary/10',
                     revealed && isPicked && !isAnswer && 'border-destructive/40 bg-destructive/5',
-                    revealed && !isPicked && !isAnswer && 'border-border opacity-60',
+                    revealed && !isPicked && !isAnswer && 'opacity-60',
                   )}
                 >
                   <span
@@ -447,7 +447,7 @@ export default function ReadingPage() {
           )}
 
           {choice !== null && (
-            <div className="mt-5 rounded-xl border border-border bg-secondary/30 p-4 md:p-5">
+            <div className="mt-5 glass-inset p-4 md:p-5">
               <div className="flex items-center gap-2">
                 {choice !== null && answers[answers.length - 1]?.correct ? (
                   <>
@@ -483,7 +483,7 @@ export default function ReadingPage() {
               </div>
 
               <p className="mt-4 text-right text-[12px] text-muted-foreground">
-                <kbd className="mx-0.5 rounded border border-border bg-secondary/70 px-1">Enter</kbd>
+                <kbd className="glass-chip mx-0.5 rounded px-1">Enter</kbd>
                 {index + 1 >= finalQueue.length ? '看本轮结果' : '下一题'}
                 {display.kind === 'blank' ? '（填空输入框里 Enter 直接判题）' : ''}
               </p>
@@ -529,7 +529,7 @@ export default function ReadingPage() {
                   { key: 'blank', label: '程序填空', stat: byKind.blank },
                 ] as const
               ).map((entry) => (
-                <div key={entry.key} className="rounded-lg border border-border px-3 py-2.5">
+                <div key={entry.key} className="glass-inset px-3 py-2.5">
                   <p className="mono-label">{entry.label}</p>
                   <p className="mt-1 text-[14px] tabular-nums">
                     {entry.stat.total === 0
@@ -550,10 +550,10 @@ export default function ReadingPage() {
                 return (
                   <div
                     key={answer.itemId}
-                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border px-3 py-2.5"
+                    className="flex flex-wrap items-center justify-between gap-2 glass-inset px-3 py-2.5"
                   >
                     <span className="text-[13.5px]">
-                      <span className="mr-2 rounded border border-border px-1 py-0.5 text-[11px] text-muted-foreground">
+                      <span className="mr-2 rounded glass-chip px-1 py-0.5 text-[11px] text-muted-foreground">
                         L{item.level}
                       </span>
                       {item.title}
@@ -583,7 +583,7 @@ export default function ReadingPage() {
             {reviewMode ? (
               <Link
                 to={mistakesLink}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-[13.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+                className="inline-flex items-center gap-1.5 rounded-lg glass-chip px-4 py-2 text-[13.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
               >
                 回错题本
               </Link>
@@ -591,7 +591,7 @@ export default function ReadingPage() {
               <button
                 type="button"
                 onClick={() => restart(level)}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-[13.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
+                className="inline-flex items-center gap-1.5 rounded-lg glass-chip px-4 py-2 text-[13.5px] text-muted-foreground transition-colors hover:bg-foreground/[0.04] hover:text-foreground"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 重新做这一轮

@@ -66,21 +66,21 @@ export default function HomePage() {
             </Link>
             <Link
               to="/practice"
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-5 py-2.5 text-[14.5px] font-medium transition-colors hover:bg-secondary"
+              className="inline-flex items-center gap-1.5 rounded-full glass-chip px-5 py-2.5 text-[14.5px] font-medium transition-colors hover:bg-white/65"
             >
               <PenLine className="h-3.5 w-3.5" />
               做一组自测
             </Link>
             <Link
               to="/reading"
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-5 py-2.5 text-[14.5px] font-medium transition-colors hover:bg-secondary"
+              className="inline-flex items-center gap-1.5 rounded-full glass-chip px-5 py-2.5 text-[14.5px] font-medium transition-colors hover:bg-white/65"
             >
               <Code className="h-3.5 w-3.5" />
               读程序 · 写结果
             </Link>
             <Link
               to="/map"
-              className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-5 py-2.5 text-[14.5px] font-medium transition-colors hover:bg-secondary"
+              className="inline-flex items-center gap-1.5 rounded-full glass-chip px-5 py-2.5 text-[14.5px] font-medium transition-colors hover:bg-white/65"
             >
               <Network className="h-3.5 w-3.5" />
               知识地图
@@ -131,7 +131,7 @@ export default function HomePage() {
                 </div>
                 <p className="mt-2 text-base font-semibold tracking-tight">{stage.name}</p>
                 <p className="mt-2 min-h-16 text-[15px] leading-[1.75] text-muted-foreground">{stage.description}</p>
-                <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-secondary">
+                <div className="mt-4 h-1 w-full overflow-hidden rounded-full bg-white/65">
                   <div
                     className="h-full rounded-full bg-primary transition-[width]"
                     style={{ width: `${percent}%` }}
