@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Check, ChevronRight, PenLine, X } from 'lucide-react';
 import type { IQuestion } from '@/data';
 import { getStage, getTopic, getTopicGesp, GESP_LEVELS, QUESTIONS, STAGES, TOPICS, type StageId } from '@/data';
 import { recordQuiz, type QuizAnswer } from '@/lib/store';
+import useProgress from '@/hooks/useProgress';
+import { toast } from 'sonner';
 import { saveExamResult, useExamRecords } from '@/lib/exam';
 import PracticeResult from '@/components/PracticeResult';
 import { Input } from '@/components/ui/input';
@@ -30,6 +32,8 @@ function shuffle<T>(list: T[]): T[] {
 
 export default function PracticePage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const progress = useProgress();
   const topicParam = searchParams.get('topic') ?? '';
   const fixedTopic = getTopic(topicParam);
   const levelParam = Number(searchParams.get('level') ?? '');
@@ -37,6 +41,16 @@ export default function PracticePage() {
   const levelInfo = GESP_LEVELS.find((item) => item.level === level);
   const levelPool = level ? QUESTIONS.filter((question) => getTopicGesp(question.topicId).includes(level)) : [];
   const LEVEL_SIZE = 10;
+
+  // 错题重练：?from=mistakes[&topic=xxx]，直接把错题本里的自测错题拼成一组
+  const reviewMode = searchParams.get('from') === 'mistakes';
+  const reviewPool = reviewMode
+    ? [...progress.mistakes]
+        .sort((a, b) => b.times - a.times || b.lastAt - a.lastAt)
+        .map((mistake) => QUESTIONS.find((question) => question.id === mistake.questionId))
+        .filter((question): question is IQuestion => question !== undefined)
+        .filter((question) => !fixedTopic || question.topicId === fixedTopic.id)
+    : [];
 
   const examMode = searchParams.get('mode') === 'exam' && level !== null;
   const examRecords = useExamRecords();
@@ -51,10 +65,11 @@ export default function PracticePage() {
       ]
     : [];
 
-  const [phase, setPhase] = useState<Phase>(level ? 'running' : 'setup');
+  const [phase, setPhase] = useState<Phase>(level || reviewMode ? 'running' : 'setup');
   const [scope, setScope] = useState<Scope>('all');
   const [size, setSize] = useState<number | 'all'>(5);
   const [quiz, setQuiz] = useState<IQuestion[]>(() => {
+    if (reviewMode) return reviewPool;
     if (examMode) return examPool;
     return level ? shuffle(levelPool).slice(0, Math.min(LEVEL_SIZE, levelPool.length)) : [];
   });
@@ -67,7 +82,9 @@ export default function PracticePage() {
   const [seconds, setSeconds] = useState<number | undefined>(undefined);
   const [typeStats, setTypeStats] = useState<{ label: string; correct: number; total: number }[]>([]);
 
-  const pool = fixedTopic
+  const pool = reviewMode
+    ? reviewPool
+    : fixedTopic
     ? QUESTIONS.filter((question) => question.topicId === fixedTopic.id)
     : level
       ? levelPool
@@ -78,7 +95,9 @@ export default function PracticePage() {
           return topic?.stage === scope;
         });
 
-  const scopeLabel = fixedTopic
+  const scopeLabel = reviewMode
+    ? `错题重练 · ${fixedTopic ? fixedTopic.title : '全部章节'}`
+    : fixedTopic
     ? fixedTopic.title
     : level
       ? examMode
@@ -89,6 +108,19 @@ export default function PracticePage() {
         : `${getStage(scope).name} · ${getStage(scope).code}`;
 
   const start = () => {
+    if (reviewMode) {
+      setQuiz(reviewPool);
+      setAnswers([]);
+      setIndex(0);
+      setSelected(null);
+      setInput('');
+      setChecked(false);
+      setStartedAt(Date.now());
+      setSeconds(undefined);
+      setTypeStats([]);
+      setPhase('running');
+      return;
+    }
     const picked = shuffle(pool).slice(0, size === 'all' ? pool.length : Math.min(size, pool.length));
     setQuiz(picked);
     setAnswers([]);
@@ -103,6 +135,30 @@ export default function PracticePage() {
   };
 
   const restart = () => {
+    if (reviewMode) {
+      // 重练结算后再点「再来一组」：只把还没答对的错题重新拼一组，全清了就回错题本
+      const remaining = [...progress.mistakes]
+        .sort((a, b) => b.times - a.times || b.lastAt - a.lastAt)
+        .map((mistake) => QUESTIONS.find((question) => question.id === mistake.questionId))
+        .filter((question): question is IQuestion => question !== undefined)
+        .filter((question) => !fixedTopic || question.topicId === fixedTopic.id);
+      if (remaining.length === 0) {
+        toast.success('这一章的错题都答对了，已全部移出错题本');
+        navigate(fixedTopic ? `/mistakes?topic=${fixedTopic.id}` : '/mistakes');
+        return;
+      }
+      setQuiz(remaining);
+      setAnswers([]);
+      setIndex(0);
+      setSelected(null);
+      setInput('');
+      setChecked(false);
+      setStartedAt(Date.now());
+      setSeconds(undefined);
+      setTypeStats([]);
+      setPhase('running');
+      return;
+    }
     if (level) {
       setQuiz(examMode ? examPool : shuffle(levelPool).slice(0, Math.min(LEVEL_SIZE, levelPool.length)));
       setAnswers([]);
@@ -159,6 +215,26 @@ export default function PracticePage() {
     setTypeStats(finalStats);
     setPhase('result');
   };
+
+  // 空态只看「这一组有没有题」，不能用 reviewPool（最后一题答对后错题本清空，
+  // 结算页还会留在屏幕上，不能被空态顶掉）
+  if (reviewMode && quiz.length === 0) {
+    return (
+      <div className="mx-auto max-w-3xl px-5 py-16 text-center md:px-10">
+        <p className="text-[15.5px] text-muted-foreground">
+          {fixedTopic ? `「${fixedTopic.title}」这一章` : '错题本里'}暂时没有自测错题可以重练。
+        </p>
+        <div className="mt-4 flex items-center justify-center gap-4 text-[13.5px]">
+          <Link to={fixedTopic ? `/practice?topic=${fixedTopic.id}` : '/practice'} className="text-primary hover:underline">
+            做一组新题
+          </Link>
+          <Link to={fixedTopic ? `/mistakes?topic=${fixedTopic.id}` : '/mistakes'} className="text-muted-foreground hover:text-foreground">
+            回错题本
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   if (phase === 'setup') {
     return (
@@ -312,7 +388,10 @@ export default function PracticePage() {
       <div className="flex items-center justify-between">
         <button
           type="button"
-          onClick={restart}
+          onClick={() => {
+            if (reviewMode) navigate(fixedTopic ? `/mistakes?topic=${fixedTopic.id}` : '/mistakes');
+            else restart();
+          }}
           className="inline-flex items-center gap-1.5 text-[13.5px] text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
@@ -322,6 +401,20 @@ export default function PracticePage() {
           {index + 1} / {quiz.length}
         </span>
       </div>
+
+      {reviewMode && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2">
+          <span className="text-[13px] text-muted-foreground">
+            错题重练 · {fixedTopic ? `${fixedTopic.title} · ` : ''}共 {quiz.length} 题 · 答对即移出错题本
+          </span>
+          <Link
+            to={fixedTopic ? `/mistakes?topic=${fixedTopic.id}` : '/mistakes'}
+            className="text-[13px] text-primary hover:underline"
+          >
+            回错题本 →
+          </Link>
+        </div>
+      )}
 
       {level && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2">

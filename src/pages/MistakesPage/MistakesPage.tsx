@@ -1,5 +1,5 @@
 import { Link, useSearchParams } from 'react-router-dom';
-import { CircleCheck, Code, NotebookPen, Trash2, X } from 'lucide-react';
+import { CircleCheck, Code, NotebookPen, RotateCcw, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTopic, QUESTIONS } from '@/data';
 import useProgress from '@/hooks/useProgress';
@@ -115,6 +115,19 @@ export default function MistakesPage() {
               </button>
             );
           })}
+        </div>
+      )}
+
+      {topicCounts.length > 0 && (
+        <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-border pt-4">
+          <Link
+            to={`/practice?from=mistakes${fixedTopic ? `&topic=${fixedTopic.id}` : ''}`}
+            className="inline-flex items-center gap-1.5 rounded-full bg-foreground px-4 py-2 text-[13.5px] font-medium text-background transition-opacity hover:opacity-85"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            重练这 {fixedTopic ? visibleItems.length : items.length} 道自测错题
+          </Link>
+          <span className="text-[12.5px] text-muted-foreground">按错次从高到低出题，答对自动移出错题本</span>
         </div>
       )}
 
