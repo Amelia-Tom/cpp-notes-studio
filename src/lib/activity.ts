@@ -1,4 +1,4 @@
-// EXPORTS: computeActivity, IActivityDay, IActivitySummary
+// EXPORTS: computeActivity, dayKeyOf, IActivityDay, IActivitySummary
 
 /**
  * 学习节奏统计：把四份本地记录（自测练习、错题重练、程序阅读、模拟卷）
@@ -56,6 +56,12 @@ function dayKey(date: Date): string {
 
 function dayLabel(date: Date): string {
   return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+/** 把任意时间表示换成「YYYY-MM-DD」（本地时区），供页面按日比对用 */
+export function dayKeyOf(value: Date | number | string): string {
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : dayKey(date);
 }
 
 export function computeActivity(input: {

@@ -8,17 +8,20 @@ import {
   RadarChart,
   ResponsiveContainer,
 } from 'recharts';
+import { Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { GESP_LEVELS, QUESTIONS, STAGES, TOPICS } from '@/data';
 import useProgress from '@/hooks/useProgress';
 import { resetProgress } from '@/lib/store';
 import { resetSelfTalk, selfTalkWeight, SELF_TALK_LEVELS, useSelfTalk } from '@/lib/selfTalk';
 import { resetExamRecords, useExamRecords } from '@/lib/exam';
-import { READING_ITEMS, READING_LEVELS } from '@/data/reading';
+import { getReadingTopicId, READING_ITEMS, READING_LEVELS } from '@/data/reading';
 import { resetReadingRecords, useReadingRecords } from '@/lib/reading';
 import { resetReviewRounds, useReviewRounds } from '@/lib/review';
-import { computeActivity } from '@/lib/activity';
+import { computeActivity, dayKeyOf } from '@/lib/activity';
 import { cn } from '@/lib/utils';
+import { downloadMarkdown } from '@/lib/markdown';
+import { buildWeeklyReportMarkdown } from '@/lib/weekly-report';
 
 interface Dimension {
   key: string;
@@ -151,6 +154,73 @@ export default function ProgressPage() {
   const activityMax = Math.max(1, ...activity.days.map((day) => day.total + day.reading + day.exams));
   const weekRate = activity.week.total > 0 ? Math.round((activity.week.correct / activity.week.total) * 100) : null;
 
+  // 错题按章节归集：自测从 question.topicId 反查，阅读用 READING_TOPIC 映射
+  const mistakeChapterMap: Record<string, { title: string; order: number; self: number; reading: number }> = {};
+  progress.mistakes.forEach((entry) => {
+    const question = QUESTIONS.find((item) => item.id === entry.questionId);
+    const topic = question ? TOPICS.find((item) => item.id === question.topicId) : undefined;
+    if (!topic) return;
+    const bucket = mistakeChapterMap[topic.id] ?? { title: topic.title, order: topic.order, self: 0, reading: 0 };
+    bucket.self += 1;
+    mistakeChapterMap[topic.id] = bucket;
+  });
+  readingList
+    .filter((record) => !record.correct)
+    .forEach((record) => {
+      const topicId = getReadingTopicId(record.itemId);
+      const topic = topicId ? TOPICS.find((item) => item.id === topicId) : undefined;
+      if (!topic) return;
+      const bucket = mistakeChapterMap[topic.id] ?? { title: topic.title, order: topic.order, self: 0, reading: 0 };
+      bucket.reading += 1;
+      mistakeChapterMap[topic.id] = bucket;
+    });
+  const mistakeChapters = Object.values(mistakeChapterMap).sort(
+    (a, b) => b.self + b.reading - (a.self + a.reading) || a.order - b.order,
+  );
+
+  // 本周薄弱点：只看最近 7 天确有作答、且正确率低于 80% 的章节
+  const weekTopicStats: Record<string, { total: number; correct: number }> = {};
+  const weekKeys = new Set(activity.days.slice(-7).map((day) => day.key));
+  progress.records
+    .filter((record) => weekKeys.has(dayKeyOf(record.at)))
+    .forEach((record) => {
+      Object.entries(record.byTopic ?? {}).forEach(([topicId, stat]) => {
+        const current = weekTopicStats[topicId] ?? { total: 0, correct: 0 };
+        weekTopicStats[topicId] = { total: current.total + stat.total, correct: current.correct + stat.correct };
+      });
+    });
+  const weekWeakChapters = TOPICS.map((topic) => {
+    const stat = weekTopicStats[topic.id];
+    if (!stat || stat.total === 0) return null;
+    const rate = Math.round((stat.correct / stat.total) * 100);
+    if (rate >= 80) return null;
+    return { title: topic.title, order: topic.order, total: stat.total, correct: stat.correct, rate };
+  })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+    .sort((a, b) => a.rate - b.rate)
+    .slice(0, 3);
+
+  const nextChapter = TOPICS.slice()
+    .sort((a, b) => a.order - b.order)
+    .find((topic) => !progress.completed.includes(topic.id));
+
+  const handleExportReport = () => {
+    const content = buildWeeklyReportMarkdown({
+      days: activity.days,
+      week: activity.week,
+      streak: activity.streak,
+      todayActive: activity.todayActive,
+      completed: progress.completed.length,
+      totalTopics: TOPICS.length,
+      mistakes: mistakeChapters,
+      weak: weekWeakChapters,
+      nextChapter: nextChapter ? { title: nextChapter.title, order: nextChapter.order, minutes: nextChapter.minutes } : undefined,
+    });
+    const day = new Date().toISOString().slice(0, 10);
+    downloadMarkdown(content, `周报-${day}.md`);
+    toast.success('已导出本周学习报告');
+  };
+
   const handleReset = () => {
     if (!window.confirm('清空本机的学习进度、练习记录、错题本、重练记录与自讲自评？此操作不可恢复。')) return;
     resetProgress();
@@ -191,11 +261,21 @@ export default function ProgressPage() {
             <h2 className="text-base font-semibold tracking-tight">学习节奏</h2>
             <span className="mono-label">last 14 days</span>
           </div>
-          <div className="text-[13px] text-muted-foreground">
-            最近 7 天：做题 {activity.week.total} 题
-            {weekRate !== null && <span className="ml-1.5 text-foreground tabular-nums">{weekRate}%</span>}
-            <span className="mx-1.5">·</span>重练 {activity.week.reviewRounds} 组
-            <span className="mx-1.5">·</span>阅读 {activity.week.reading} 道
+          <div className="flex flex-wrap items-center gap-3 text-[13px] text-muted-foreground">
+            <span>
+              最近 7 天：做题 {activity.week.total} 题
+              {weekRate !== null && <span className="ml-1.5 text-foreground tabular-nums">{weekRate}%</span>}
+              <span className="mx-1.5">·</span>重练 {activity.week.reviewRounds} 组
+              <span className="mx-1.5">·</span>阅读 {activity.week.reading} 道
+            </span>
+            <button
+              type="button"
+              onClick={handleExportReport}
+              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1 text-[12.5px] text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+            >
+              <Download className="h-3.5 w-3.5" />
+              导出本周报告
+            </button>
           </div>
         </div>
 
