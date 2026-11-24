@@ -22,6 +22,8 @@
 
 React 19 + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui + lucide-react + recharts，数据全部本地存储（localStorage），无后端。
 
+视觉上走 **iOS 26 液态玻璃（Liquid Glass）** 取向：底色是几团极淡的蓝/雾光叠在纸白上（`body` 的固定径向渐变），内容卡片用 `.surface`、悬浮侧栏用 `.glass-rail`——半透明白做玻璃本体、`backdrop-filter: blur() saturate()` 做磨砂、顶部内高光 + 左上斜向反射亮带 + 外圈柔影做边缘折射，圆角统一收到 18/22px。整页只保留一个蓝（`#0071E3`）做交互与数据色，玻璃本身保持中性，避免发紫或整页发蓝。
+
 ## 本地运行
 
 ```bash

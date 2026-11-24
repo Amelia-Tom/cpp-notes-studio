@@ -58,8 +58,9 @@ export default function Layout() {
   const done = progress.completed.length;
 
   return (
-    <div className="min-h-screen bg-background text-foreground md:flex">
-      <aside className="glass sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col border-r border-border px-4 py-5 md:flex">
+    // 根层不铺底色：让 body 的雾光渐变透上来，玻璃面板才有东西可透
+    <div className="min-h-screen text-foreground md:flex">
+      <aside className="glass-rail sticky top-3 ml-3 hidden h-[calc(100vh-1.5rem)] w-[236px] shrink-0 flex-col rounded-[22px] px-4 py-5 md:flex">
         <Brand />
 
         <nav className="mt-8 flex flex-col gap-1">
@@ -103,7 +104,7 @@ export default function Layout() {
       </header>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background md:hidden">
+        <div className="fixed inset-0 z-50 flex flex-col bg-white/80 backdrop-blur-2xl md:hidden">
           <div className="flex items-center justify-between border-b border-border px-4 py-3">
             <Brand />
             <button

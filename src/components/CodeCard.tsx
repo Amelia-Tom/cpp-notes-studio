@@ -43,7 +43,7 @@ export default function CodeCard({ code, title = 'main.cpp', compact = false, cl
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_1px_rgba(0,0,0,0.03),0_18px_40px_-28px_rgba(0,0,0,0.35)]',
+        'overflow-hidden rounded-2xl border border-white/70 bg-white/75 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_1px_2px_rgba(15,23,42,0.04),0_22px_48px_-30px_rgba(15,23,42,0.32)]',
         className,
       )}
     >

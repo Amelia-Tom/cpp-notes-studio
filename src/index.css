@@ -10,27 +10,87 @@ html {
 }
 
 body {
-  background-color: var(--background);
   color: var(--foreground);
   font-feature-settings: "tnum" 1;
+  /* 底色不再是一块死灰，而是几团极淡的蓝/雾光叠在纸白上：
+     磨砂面板要有东西可透，玻璃感才立得起来 */
+  background-color: #eeeff3;
+  background-image:
+    radial-gradient(1200px 700px at 6% -14%, rgba(0, 113, 227, 0.10), transparent 60%),
+    radial-gradient(880px 620px at 98% 0%, rgba(176, 196, 224, 0.16), transparent 64%),
+    radial-gradient(900px 620px at 64% 108%, rgba(255, 255, 255, 0.7), transparent 62%),
+    radial-gradient(680px 520px at 30% 104%, rgba(0, 113, 227, 0.05), transparent 70%),
+    linear-gradient(180deg, #f8f9fb 0%, #f1f3f7 46%, #eceff5 100%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 ::selection {
   background: color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
-/* 磨砂面板：macOS 工具栏的质感 */
+/* ── 液态玻璃（iOS 26 Liquid Glass 取向）─────────────────────────
+   三层叠出来：半透明白做「玻璃本体」、backdrop-filter 做「磨砂」、
+   顶部一道内高光 + 外圈柔影做「边缘折射」。
+   蓝色只出现在底色氛围与交互态里，玻璃本身保持中性，避免整页发蓝。 */
 .glass {
-  background: color-mix(in srgb, var(--card) 78%, transparent);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.5) 58%, rgba(255, 255, 255, 0.62) 100%);
+  backdrop-filter: blur(28px) saturate(185%);
+  -webkit-backdrop-filter: blur(28px) saturate(185%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.28),
+    0 10px 30px -22px rgba(15, 30, 60, 0.24);
 }
 
-/* 细线描边 + 极轻阴影，用于内容卡片 */
+/* 悬浮玻璃导轨：给侧栏/浮层用，圆角 + 双边缘高光 */
+.glass-rail {
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.74) 0%, rgba(255, 255, 255, 0.46) 60%, rgba(255, 255, 255, 0.6) 100%);
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.66);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.3),
+    0 1px 1px rgba(15, 23, 42, 0.04),
+    0 24px 48px -30px rgba(15, 23, 42, 0.3);
+}
+
+/* 内容卡片：比导轨更「薄」一点，让背后的雾光透出来 */
 .surface {
-  background: var(--card);
-  border: 1px solid var(--border);
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.02), 0 12px 32px -20px rgba(0, 0, 0, 0.18);
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(152deg, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.5) 54%, rgba(255, 255, 255, 0.6) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 1.125rem;
+  backdrop-filter: blur(24px) saturate(175%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.22),
+    0 1px 2px rgba(15, 23, 42, 0.03),
+    0 20px 44px -28px rgba(15, 23, 42, 0.26);
+}
+
+/* 卡片左上角那道斜向高光：模拟玻璃表面的反射亮带 */
+.surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    linear-gradient(146deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.12) 34%, transparent 52%);
+  pointer-events: none;
+}
+
+/* 玻璃上的输入框/胶囊按钮会显得更「实」，给它们一点折射边 */
+.glass-field {
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 2px rgba(15, 23, 42, 0.03);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
 }
 
 /* 区块左侧的发丝线，模仿编辑器行号槽 */
