@@ -84,6 +84,50 @@ body {
   pointer-events: none;
 }
 
+/* 卡片滚进视口时有一道极淡的高光扫过（Chrome 的 scroll-driven animation，
+   不支持的浏览器就是静态高光，不影响可读性） */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .surface::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(104deg, transparent 32%, rgba(255, 255, 255, 0.5) 46%, transparent 60%);
+      background-size: 240% 240%;
+      opacity: 0.7;
+      animation: glass-sheen linear both;
+      animation-timeline: view();
+      animation-range: entry 8% cover 26%;
+    }
+  }
+}
+
+@keyframes glass-sheen {
+  from {
+    background-position: 140% 0%;
+  }
+  to {
+    background-position: -40% 70%;
+  }
+}
+
+/* 按钮按下去像玻璃被压了一下：轻微缩小 + 一点点提亮 */
+button:not(:disabled) {
+  transition-property: transform, filter, background-color, border-color, color, opacity, box-shadow;
+  transition-duration: 180ms;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled):active {
+    transform: scale(0.972);
+    filter: brightness(1.02) saturate(1.04);
+  }
+}
+
 /* 玻璃上的输入框/胶囊按钮会显得更「实」，给它们一点折射边 */
 .glass-field {
   background: rgba(255, 255, 255, 0.66);
